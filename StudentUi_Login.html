@@ -53,9 +53,13 @@
     };
     firebase.initializeApp(firebaseConfig);
     window.db = firebase.database();
+
+    // 顯示學生基本資料
+    document.getElementById("student-name").innerText = sessionStorage.getItem("studentName") || "...";
+    document.getElementById("student-class").innerText = sessionStorage.getItem("studentClass") || "...";
   </script>
 
   <!-- 行為邏輯 -->
-  <script src="student-ui.js"></script>
+  <script src="student-ui.js" type="module"></script>
 </body>
 </html>
