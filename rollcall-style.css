@@ -29,7 +29,7 @@
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbw2P_Y1dQQDUYNNkF72eZ5bZt7mgV5_i9OmKFTy_2sXEI6NDE81AF_RRMjmaVTNIDfQ/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxhcGP85HbgYM0YUpzKBHcSrTPKSKDSv3kYuE9jcQ-Req_X2JACyw1gBnafRO7H5vnP/exec";
 
     function toggleMode() {
       const mode = document.getElementById("mode").value;
