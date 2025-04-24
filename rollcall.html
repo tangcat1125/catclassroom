@@ -1,67 +1,17 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>學生登入 - 白貓工作室</title>
-  <style>
-    body {
-      font-family: "Microsoft JhengHei";
-      background: #f9f9f9;
-      padding: 20px;
-    }
-    .container {
-      max-width: 480px;
-      margin: auto;
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.08);
-    }
-    h2 {
-      color: #3366cc;
-      font-size: 24px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    label {
-      margin-top: 16px;
-      display: block;
-      font-size: 18px;
-    }
-    input, select {
-      width: 100%;
-      padding: 14px;
-      font-size: 18px;
-      margin-top: 8px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-    button.btn {
-      width: 100%;
-      background: #3366cc;
-      color: white;
-      padding: 16px;
-      font-size: 18px;
-      margin-top: 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button.btn:hover {
-      background-color: #2852a0;
-    }
-    .note {
-      margin-top: 14px;
-      font-size: 16px;
-      color: green;
-      text-align: center;
-    }
-  </style>
+  <link rel="stylesheet" href="rollcall-style.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <div class="container">
     <h2>學生登入</h2>
+
     <label>我是...</label>
     <select id="mode" onchange="toggleMode()">
       <option value="self">本班學生</option>
@@ -81,6 +31,13 @@
   </div>
 
   <script>
+    // ✅ Firebase 設定（替換成你自己的專案資訊）
+    const firebaseConfig = {
+      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     function toggleMode() {
       const mode = document.getElementById("mode").value;
       const seatBox = document.getElementById("seat-box");
@@ -91,9 +48,9 @@
         `;
       } else {
         seatBox.innerHTML = `
-          <label for="seat">請選擇您的外班代號（編號）：</label>
+          <label for="seat">請選擇您的外班代號：</label>
           <select id="seat">
-            ${Array.from({length: 30}, (_, i) => `<option value="G${i+1}">G${i+1}</option>`).join("")}
+            ${Array.from({ length: 30 }, (_, i) => `<option value="G${i + 1}">G${i + 1}</option>`).join("")}
           </select>
         `;
       }
@@ -110,17 +67,20 @@
         return;
       }
 
-      document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
-
-      google.script.run.withFailureHandler(function(err) {
-        document.getElementById("result").innerText = "❌ 傳送失敗，請稍後再試。";
-        console.error("Error:", err);
-      }).withSuccessHandler(function(msg) {
-        console.log("✅ 送出成功：", msg);
-      }).logStudent({
+      const timestamp = new Date().toISOString();
+      const loginData = {
         StudentName: name,
-        StudentID: id
-      });
+        StudentID: id,
+        Timestamp: timestamp
+      };
+
+      firebase.database().ref("login/" + id).set(loginData)
+        .then(() => {
+          document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
+        })
+        .catch((error) => {
+          console.error("❌ Firebase 寫入失敗：", error);
+        });
     }
   </script>
 </body>
