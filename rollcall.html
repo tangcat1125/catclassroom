@@ -4,19 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>學生登入 - 白貓工作室</title>
-
-  <!-- 樣式表 -->
   <link rel="stylesheet" href="rollcall-style.css" />
-
-  <!-- Firebase 相關 -->
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js"></script>
-  <script type="module" src="firebase-config.js"></script> <!-- ⬅️ 你自己的設定 -->
 </head>
 <body>
   <div class="container">
     <h2>學生登入</h2>
-
     <label>我是...</label>
     <select id="mode" onchange="toggleMode()">
       <option value="self">本班學生</option>
@@ -24,7 +16,7 @@
     </select>
 
     <label for="name">請輸入您的暱稱或本名：</label>
-    <input type="text" id="name" placeholder="如：琪琪 / 小熊 / Lily" />
+    <input type="text" id="name" placeholder="如：小熊 / 昆廷 / Lily" />
 
     <div id="seat-box">
       <label for="seat">請輸入您的座號（數字）：</label>
@@ -35,17 +27,32 @@
     <div id="result" class="note"></div>
   </div>
 
+  <!-- ✅ Firebase + 功能模組 -->
   <script type="module">
-    import { ref, set } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
-    // 取用全局 Firebase 資料庫（從 firebase-config.js）
-    const db = window.firebaseDb;
+    const firebaseConfig = {
+      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+      authDomain: "catclassroom-login.firebaseapp.com",
+      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "catclassroom-login",
+      storageBucket: "catclassroom-login.appspot.com",
+      messagingSenderId: "123487233181",
+      appId: "1:123487233181:web:4b65356bd966d242962074",
+      measurementId: "G-SPSC67KEH5"
+    };
 
-    // 模式切換：本班 or 外班
-    window.toggleMode = function () {
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    window.db = db; // 讓全域可用
+  </script>
+
+  <!-- ✅ 功能 JS -->
+  <script>
+    function toggleMode() {
       const mode = document.getElementById("mode").value;
       const seatBox = document.getElementById("seat-box");
-
       if (mode === "self") {
         seatBox.innerHTML = `
           <label for="seat">請輸入您的座號（數字）：</label>
@@ -59,64 +66,37 @@
           </select>
         `;
       }
-    };
+    }
 
-    // 登入功能
-    window.submitLogin = function () {
+    async function submitLogin() {
       const name = document.getElementById("name").value.trim();
       const seat = document.getElementById("seat").value;
       const mode = document.getElementById("mode").value;
-      const id = mode === "self" ? seat.padStart(2, "0") : seat;
+      const id = (mode === "self") ? seat.padStart(2, "0") : seat;
 
-      if (!name || !seat) {
+      if (!name || !id) {
         alert("請完整填寫暱稱與座號！");
         return;
       }
 
-      const timestamp = new Date().toISOString();
       const loginData = {
         StudentName: name,
         StudentID: id,
-        Timestamp: timestamp
+        Timestamp: new Date().toISOString()
       };
 
-      set(ref(db, "login/" + id), loginData)
-        .then(() => {
-          sessionStorage.setItem("studentName", name);
-          sessionStorage.setItem("studentId", id);
-          sessionStorage.setItem("studentClass", mode === "self" ? "六年0班" : "其他班");
-          document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
-          setTimeout(() => {
-            window.location.href = "StudentUi_Login.html"; // 🎯 導向學生介面
-          }, 1000);
-        })
-        .catch((error) => {
-          console.error("❌ Firebase 寫入失敗：", error);
-          alert("寫入失敗，請檢查網路或 Firebase 設定。");
-        });
-    };
+      try {
+        await set(ref(window.db, `login/${id}`), loginData);
+        document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
+        sessionStorage.setItem("studentName", name);
+        sessionStorage.setItem("studentId", id);
+        sessionStorage.setItem("studentClass", mode === "self" ? "六年0班" : "外班訪客");
+        window.location.href = "StudentUi_Login.html"; // ✅ 跳轉學生 UI
+      } catch (error) {
+        console.error("❌ Firebase 寫入失敗：", error);
+        alert("登入失敗，請稍後再試！");
+      }
+    }
   </script>
 </body>
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-  import { getDatabase } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
-    authDomain: "catclassroom-login.firebaseapp.com",
-    databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "catclassroom-login",
-    storageBucket: "catclassroom-login.firebasestorage.app",
-    messagingSenderId: "123487233181",
-    appId: "1:123487233181:web:4b65356bd966d242962074",
-    measurementId: "G-SPSC67KEH5"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-
-  // 讓你的 login function 能用 db
-  window.db = db;
-</script>
-
 </html>
