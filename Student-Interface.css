@@ -1,129 +1,56 @@
-body {
-  font-family: "Microsoft JhengHei", sans-serif;
-  background: #f5f8fa;
-  margin: 0;
-  padding: 20px;
-  color: #333;
-}
+import { getDatabase, ref, onValue, set, push } from "firebase/database";
 
-.top-info {
-  text-align: right;
-  font-size: 16px;
-  color: #b22222;
-  margin-bottom: 10px;
-}
+// Firebase 初始化
+const db = getDatabase();
 
-.title {
-  text-align: center;
-  font-size: 28px;
-  color: #3366cc;
-  margin-bottom: 20px;
-}
+// 學生資訊（這應該是登入頁傳來或儲存的）
+const studentName = sessionStorage.getItem("studentName");
+const studentId = sessionStorage.getItem("studentId");
+const studentClass = sessionStorage.getItem("studentClass");
 
-.status-panel {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-}
+// 🎓 顯示學生資料
+document.getElementById("student-name").innerText = studentName;
+document.getElementById("student-class").innerText = studentClass;
 
-.light {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: orange;
-  box-shadow: 0 0 10px rgba(255, 165, 0, 0.6);
-  opacity: 0.2;
-  transition: opacity 0.3s;
-  cursor: pointer;
-}
+// 🟧 橘燈點擊開啟留言框
+document.getElementById("help-button").addEventListener("click", () => {
+  const helpMsg = prompt("請輸入想傳給老師的訊息：");
+  if (helpMsg) {
+    set(ref(db, `help/${studentId}`), {
+      message: helpMsg,
+      time: new Date().toISOString()
+    });
+  }
+});
 
-.light.red {
-  background: crimson;
-  box-shadow: 0 0 10px rgba(220, 20, 60, 0.6);
-}
+// 🔴 監聽老師是否出題
+const questionRef = ref(db, "teacher/question");
 
-.label {
-  font-size: 18px;
-  color: #333;
-  text-align: center;
-  margin-top: 8px;
-}
+onValue(questionRef, (snapshot) => {
+  const data = snapshot.val();
+  const redLight = document.getElementById("red-light");
+  if (data && data.active) {
+    redLight.classList.add("active");
 
-.btn {
-  padding: 10px 20px;
-  margin: 5px;
-  font-size: 18px;
-  border: none;
-  border-radius: 8px;
-  background: #3366cc;
-  color: white;
-  cursor: pointer;
-}
+    // 出現中型跳窗
+    const modal = document.getElementById("question-modal");
+    document.getElementById("question-image").src = data.image || "";
+    modal.style.display = "flex";
+  } else {
+    redLight.classList.remove("active");
+    document.getElementById("question-modal").style.display = "none";
+  }
+});
 
-.btn:hover {
-  background: #2852a0;
-}
+// 🟩 截圖標記完成 → 通知老師（假設用 canvas 或拍照）
+document.getElementById("submit-answer").addEventListener("click", () => {
+  set(ref(db, `answers/${studentId}`), {
+    name: studentName,
+    time: new Date().toISOString(),
+    status: "done"
+  });
 
-.choice-group {
-  display: flex;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-#help-box {
-  margin-top: 20px;
-  text-align: center;
-}
-
-#help-box textarea {
-  width: 80%;
-  height: 100px;
-  font-size: 16px;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  margin-bottom: 10px;
-}
-
-.send-btn {
-  background: #28a745;
-  color: white;
-}
-
-.send-btn:hover {
-  background: #218838;
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  max-width: 90%;
-  text-align: center;
-}
-
-.tools button {
-  margin: 5px;
-}
-
-.hide {
-  display: none;
-}
+  // 亮綠燈顯示送出成功
+  alert("✅ 已送出給老師！");
+  document.getElementById("question-modal").style.display = "none";
+});
