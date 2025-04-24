@@ -1,48 +1,36 @@
-// 初始化燈號狀態
-let teacherHasQuestion = false;
-let studentNeedHelp = false;
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
-const redLight = document.getElementById("red-light");
-const orangeLight = document.getElementById("orange-light");
-const helpBox = document.getElementById("help-box");
-const helpInput = document.getElementById("help-text");
-const helpSend = document.getElementById("help-send");
-const tfArea = document.getElementById("tf-area");
-const mcqArea = document.getElementById("mcq-area");
+// 初始化
+const db = window.db;
 
-// 模擬：每 8 秒老師出題開紅燈
-setInterval(() => {
-  teacherHasQuestion = !teacherHasQuestion;
-  updateLights();
-  updateQuestionUI();
-}, 8000);
+// 取用 sessionStorage
+const studentName = sessionStorage.getItem("studentName");
+const studentId = sessionStorage.getItem("studentId");
+const studentClass = sessionStorage.getItem("studentClass");
 
-function updateLights() {
-  redLight.style.opacity = teacherHasQuestion ? 1 : 0.2;
-  orangeLight.style.opacity = studentNeedHelp ? 1 : 0.2;
-}
+// 顯示資料
+document.getElementById("student-name").innerText = studentName;
+document.getElementById("student-class").innerText = studentClass;
 
-orangeLight.addEventListener("click", () => {
-  studentNeedHelp = !studentNeedHelp;
-  updateLights();
-  helpBox.style.display = studentNeedHelp ? "block" : "none";
-});
-
-helpSend.addEventListener("click", () => {
-  const msg = helpInput.value.trim();
-  if (msg !== "") {
-    console.log("✅ 傳送學生求救：", msg);
-    // 寫入 Firebase 可在這裡加上
-    helpInput.value = "";
-    studentNeedHelp = false;
-    updateLights();
-    helpBox.style.display = "none";
+// 橘燈按鈕事件：留言給老師
+document.getElementById("help-button").addEventListener("click", () => {
+  const message = prompt("請輸入想傳給老師的訊息：");
+  if (message) {
+    set(ref(db, `help/${studentId}`), {
+      message: message,
+      time: new Date().toISOString()
+    });
   }
 });
 
-function updateQuestionUI() {
-  tfArea.style.display = teacherHasQuestion ? "block" : "none";
-  mcqArea.style.display = teacherHasQuestion ? "block" : "none";
-}
-
-// TODO: 這裡可以擴充按鈕點選題目、Firebase 回傳答案等等
+// 紅燈亮燈條件：老師出題
+const questionRef = ref(db, "teacher/question");
+onValue(questionRef, (snapshot) => {
+  const data = snapshot.val();
+  const redlight = document.getElementById("red-light");
+  if (data && data.active) {
+    redlight.classList.add("active");
+  } else {
+    redlight.classList.remove("active");
+  }
+});
