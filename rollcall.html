@@ -97,4 +97,26 @@
     };
   </script>
 </body>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+  import { getDatabase } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+    authDomain: "catclassroom-login.firebaseapp.com",
+    databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "catclassroom-login",
+    storageBucket: "catclassroom-login.firebasestorage.app",
+    messagingSenderId: "123487233181",
+    appId: "1:123487233181:web:4b65356bd966d242962074",
+    measurementId: "G-SPSC67KEH5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // 讓你的 login function 能用 db
+  window.db = db;
+</script>
+
 </html>
