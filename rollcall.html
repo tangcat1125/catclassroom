@@ -76,6 +76,21 @@
 
       // 顯示登入結果（未連接後端資料，未來可擴充）
       document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
+fetch("https://script.google.com/macros/s/AKfycbwayKMpv8tkY2VFBGpRpdkk6JxQu-xz4_kDjgvO2_0x8jANyBQC7zs4z_w9sA_T-Z3Z/exec", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    type: "login",
+    name: name,
+    id: id,
+    time: new Date().toISOString()
+  })
+})
+.then(res => res.text())
+.then(msg => console.log("✅ 已送出到 Google Sheets：" + msg))
+.catch(err => console.error("❌ 傳送失敗：", err));
 
       // 可加：localStorage 儲存暱稱、ID，用於後續送出答案辨識
     }
