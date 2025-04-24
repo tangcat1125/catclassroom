@@ -69,28 +69,31 @@
       const mode = document.getElementById("mode").value;
       const id = (mode === "self") ? seat.padStart(2, "0") : seat;
 
-      if (!name || !seat) {
-        alert("請完整填寫暱稱與座號！");
-        return;
-      }
+      以下是反饋sheet的編碼
+     if (!name || !seat) {
+  alert("請完整填寫暱稱與座號！");
+  return;
+}
 
-      // 顯示登入結果（未連接後端資料，未來可擴充）
-      document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
-fetch("https://script.google.com/macros/s/AKfycbyypcR8YTsoSJnZ1Ax7lcsiNYWAvE4mVN21vHT3dmp0GnslbeVlPy1tqj_jbo4LVMvH/exec", {
+// 顯示登入結果（未連接後端資料，未來可擴充）
+document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
+
+fetch("https://script.google.com/macros/s/AKfycbzNdL9kSv6szAZ3qMEmk9SMdYFlFxou3FZESVEthJoI2snIGYugDB76YDUxx3I0njiw/exec", {
   method: "POST",
   headers: {
     "Content-Type": "application/json"
   },
   body: JSON.stringify({
     type: "login",
-    name: name,
-    id: id,
+    StudentName: name,
+    StudentID: id,
     time: new Date().toISOString()
   })
 })
 .then(res => res.text())
 .then(msg => console.log("✅ 已送出到 Google Sheets：" + msg))
 .catch(err => console.error("❌ 傳送失敗：", err));
+
 
       // 可加：localStorage 儲存暱稱、ID，用於後續送出答案辨識
     }
