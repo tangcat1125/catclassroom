@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>學生互動界面</title>
+  <link rel="stylesheet" href="rollcall-style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>學生登入成功</h2>
+    <div class="top-info">
+      <span>班級：六年0班</span>
+      <span>姓名：米米</span>
+    </div>
+
+    <div class="status-panel">
+      <div class="light red" id="red-light" onclick="showQuestion()">🔴</div>
+      <div class="label">老師有出題</div>
+      <div class="light orange" id="orange-light" onclick="toggleHelp()">🟠</div>
+      <div class="label">我要求救</div>
+    </div>
+
+    <!-- 題目顯示區（紅燈） -->
+    <div class="question-box" id="question-box" style="display:none">
+      <p>題目：地球是圓的嗎？</p>
+      <button>是</button>
+      <button>否</button>
+    </div>
+
+    <!-- 求救文字輸入區（橘燈） -->
+    <div class="help-box" id="help-box" style="display:none">
+      <textarea placeholder="請輸入你要傳給老師的訊息..."></textarea>
+      <button onclick="sendHelp()">傳送給老師</button>
+    </div>
+
+    <!-- 跳窗截圖互動區（由老師觸發） -->
+    <div class="screenshot-popup" id="screenshot-popup" style="display:none">
+      <img src="screenshot.jpg" alt="老師的題目截圖">
+      <div class="tools">
+        <button>劃線</button>
+        <button>標記</button>
+        <button>清除全部</button>
+        <button onclick="submitAnnotation()">送出</button>
+      </div>
+    </div>
+
+    <button class="logout">登出</button>
+  </div>
+
+  <script>
+    function showQuestion() {
+      document.getElementById('question-box').style.display = 'block';
+    }
+
+    function toggleHelp() {
+      const box = document.getElementById('help-box');
+      box.style.display = (box.style.display === 'none') ? 'block' : 'none';
+    }
+
+    function sendHelp() {
+      alert("🟠 已傳送給老師，等待回應！");
+    }
+
+    function submitAnnotation() {
+      alert("📸 已將你標記的圖送出給老師囉！");
+    }
+  </script>
+</body>
+</html>
