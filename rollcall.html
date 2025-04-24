@@ -1,58 +1,55 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
   <title>學生登入 - 白貓工作室</title>
   <style>
-    body { font-family: "Microsoft JhengHei", sans-serif; padding: 30px; background-color: #f9f9f9; }
-    .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 8px rgba(0,0,0,0.1); }
+    body { font-family: "Microsoft JhengHei", sans-serif; background: #f9f9f9; padding: 30px; }
+    .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
     h2 { color: #3366cc; }
     label { display: block; margin-top: 12px; }
-    input, select { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; }
-    .btn { background-color: #3366cc; color: white; padding: 10px; margin-top: 20px; width: 100%; border: none; border-radius: 6px; cursor: pointer; }
-    .btn:hover { background-color: #2852a0; }
-    .note { font-size: 14px; color: gray; margin-top: 10px; }
+    input, select, button {
+      width: 100%; padding: 10px; margin-top: 5px;
+      font-size: 16px; border-radius: 6px; border: 1px solid #ccc;
+    }
+    button { background-color: #3366cc; color: white; border: none; cursor: pointer; margin-top: 20px; }
+    button:hover { background-color: #2852a0; }
+    .note { margin-top: 10px; font-size: 14px; color: green; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>學生登入</h2>
     <label>我是...</label>
-    <select id="mode" onchange="toggleMode()">
+    <select id="mode" onchange="toggleSeat()">
       <option value="self">本班學生</option>
-      <option value="guest">其他班學生或來賓</option>
+      <option value="guest">其他班來賓</option>
     </select>
 
     <label for="name">請輸入您的暱稱或本名：</label>
-    <input type="text" id="name" placeholder="如：小熊 / 晏廷 / Lily" />
+    <input type="text" id="name" placeholder="如：米米 / 小熊" />
 
     <div id="seat-box">
       <label for="seat">請輸入您的座號（數字）：</label>
       <input type="number" id="seat" min="1" max="50" />
     </div>
 
-    <button class="btn" onclick="submitLogin()">登入教室</button>
+    <button onclick="submitLogin()">登入教室</button>
     <div id="result" class="note"></div>
   </div>
 
   <script>
-    function toggleMode() {
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxLZc4T-vMPwjQBspgMP1ouTQOAN8-ZXgrtW57J6-29SlwFrDQm3hJga4iSstwXGtEf/exec";
+
+    function toggleSeat() {
       const mode = document.getElementById("mode").value;
-      const seatBox = document.getElementById("seat-box");
-      if (mode === "self") {
-        seatBox.innerHTML = `
-          <label for="seat">請輸入您的座號（數字）：</label>
-          <input type="number" id="seat" min="1" max="50" />
-        `;
+      const box = document.getElementById("seat-box");
+      if (mode === "guest") {
+        box.innerHTML = `<label for="seat">請選擇您的代號：</label>
+        <select id="seat">${Array.from({length: 30}, (_, i) => `<option value="G${i+1}">G${i+1}</option>`).join("")}</select>`;
       } else {
-        seatBox.innerHTML = `
-          <label for="seat">請選擇您的外班代號（編號）：</label>
-          <select id="seat">
-            ${Array.from({length: 30}, (_, i) => `<option value="G${i+1}">G${i+1}</option>`).join("")}
-          </select>
-        `;
+        box.innerHTML = `<label for="seat">請輸入您的座號（數字）：</label>
+        <input type="number" id="seat" min="1" max="50" />`;
       }
     }
 
@@ -69,22 +66,19 @@
 
       document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
 
-      fetch("https://script.google.com/macros/s/AKfycbxLZc4T-vMPwjQBspgMP1ouTQOAN8-ZXgrtW57J6-29SlwFrDQm3hJga4iSstwXGtEf/exec", {
+      fetch(scriptURL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "login",
           StudentName: name,
           StudentID: id,
-          mode: mode,  // ✅ 加上這行才能後端分流
           time: new Date().toISOString()
         })
       })
       .then(res => res.text())
       .then(msg => console.log("✅ 傳送成功：" + msg))
-      .catch(err => console.error("❌ 發送失敗：", err));
+      .catch(err => console.error("❌ 傳送失敗：", err));
     }
   </script>
 </body>
