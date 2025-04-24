@@ -2,48 +2,60 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>學生 UI</title>
-  <link rel="stylesheet" href="Student-Interface.css">
+  <link rel="stylesheet" href="Student-Interface.css" />
+  <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
 </head>
 <body>
   <div class="student-ui">
     <div class="header">
       <h2>學生作答區</h2>
       <div class="student-info">
-        班級：<span id="className">六年0班</span>　姓名：<span id="studentName">米米</span>
+        班級：<span id="student-class">...</span>　姓名：<span id="student-name">...</span>
       </div>
     </div>
 
     <div class="light-panel">
-      <div id="helpLight" class="light orange" onclick="toggleHelpInput()"></div>
+      <div id="help-button" class="light orange"></div>
       <span>滑動式 我要求救</span>
 
-      <div id="questionLight" class="light red"></div>
+      <div id="red-light" class="light red"></div>
       <span>紅燈表示 老師有出題</span>
     </div>
 
-    <div id="helpBox" class="help-box" style="display:none">
-      <textarea id="helpText" placeholder="寫下你遇到的問題..."></textarea>
-      <button onclick="sendHelp()">送出</button>
-    </div>
-
-    <div class="modal" id="popupModal" style="display:none">
+    <div class="modal" id="question-modal" style="display: none;">
       <div class="modal-content">
         <h3>老師出題啦！</h3>
-        <img src="screenshot.jpg" alt="老師題目截圖" style="max-width: 100%; border: 1px solid #ccc;">
+        <img id="question-image" src="" alt="老師題目截圖" style="max-width: 100%; border: 1px solid #ccc;">
         <div class="tools">
           <button onclick="highlight()">標記</button>
           <button onclick="clearMark()">清除</button>
-          <button class="send-btn" onclick="submitAnswer()">送出</button>
+          <button class="send-btn" id="submit-answer">送出</button>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Firebase 初始化 -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+      authDomain: "catclassroom-login.firebaseapp.com",
+      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "catclassroom-login",
+      storageBucket: "catclassroom-login.appspot.com",
+      messagingSenderId: "123487233181",
+      appId: "1:123487233181:web:aecc2891dc2d1096962074",
+      measurementId: "G-6C92GYSX3F"
+    };
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.database();
+  </script>
+
+  <!-- 行為邏輯 -->
   <script src="student-ui.js"></script>
 </body>
 </html>
