@@ -4,11 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>學生登入 - 白貓工作室</title>
-  <link rel="stylesheet" href="rollcall-style.css" />
-
-  <!-- Firebase SDK -->
+  <link rel="stylesheet" href="rollcall-style.css">
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
 </head>
 <body>
   <div class="container">
@@ -33,21 +32,6 @@
   </div>
 
   <script>
-    // 🔧 Firebase 設定
-    const firebaseConfig = {
-      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
-      authDomain: "catclassroom-login.firebaseapp.com",
-      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "catclassroom-login",
-      storageBucket: "catclassroom-login.firebasestorage.app",
-      messagingSenderId: "123487233181",
-      appId: "1:123487233181:web:4b65356bd966d242962074",
-      measurementId: "G-SPSC67KEH5"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // 切換座號輸入方式
     function toggleMode() {
       const mode = document.getElementById("mode").value;
       const seatBox = document.getElementById("seat-box");
@@ -60,13 +44,12 @@
         seatBox.innerHTML = `
           <label for="seat">請選擇您的外班代號：</label>
           <select id="seat">
-            ${Array.from({ length: 30 }, (_, i) => `<option value="G${i+1}">G${i+1}</option>`).join("")}
+            ${Array.from({ length: 30 }, (_, i) => `<option value="G${i + 1}">G${i + 1}</option>`).join("")}
           </select>
         `;
       }
     }
 
-    // 登入並寫入 Firebase
     function submitLogin() {
       const name = document.getElementById("name").value.trim();
       const seat = document.getElementById("seat").value;
@@ -85,9 +68,12 @@
         Timestamp: timestamp
       };
 
-      db.ref("login/" + id).set(loginData)
+      firebase.database().ref("login/" + id).set(loginData)
         .then(() => {
           document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
+          setTimeout(() => {
+            window.location.href = "StudentUi_Login.html";
+          }, 1500);
         })
         .catch((error) => {
           console.error("❌ Firebase 寫入失敗：", error);
