@@ -4,7 +4,60 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>學生登入 - 白貓工作室</title>
-  <link rel="stylesheet" href="rollcall-style.css">
+  <style>
+    body {
+      font-family: "Microsoft JhengHei";
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.08);
+    }
+    h2 {
+      color: #3366cc;
+      font-size: 24px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      margin-top: 16px;
+      display: block;
+      font-size: 18px;
+    }
+    input, select {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      margin-top: 8px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button.btn {
+      width: 100%;
+      background: #3366cc;
+      color: white;
+      padding: 16px;
+      font-size: 18px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button.btn:hover {
+      background-color: #2852a0;
+    }
+    .note {
+      margin-top: 14px;
+      font-size: 16px;
+      color: green;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -29,22 +82,20 @@
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbxhcGP85HbgYM0YUpzKBHcSrTPKSKDSv3kYuE9jcQ-Req_X2JACyw1gBnafRO7H5vnP/exec";
-
     function toggleMode() {
       const mode = document.getElementById("mode").value;
       const seatBox = document.getElementById("seat-box");
-      if (mode === "guest") {
+      if (mode === "self") {
         seatBox.innerHTML = `
-          <label>請選擇您的代號：</label>
-          <select id="seat">
-            ${Array.from({length: 30}, (_, i) => `<option value="G${i+1}">G${i+1}</option>`).join("")}
-          </select>
+          <label for="seat">請輸入您的座號（數字）：</label>
+          <input type="number" id="seat" min="1" max="50" />
         `;
       } else {
         seatBox.innerHTML = `
-          <label>請輸入您的座號（數字）：</label>
-          <input type="number" id="seat" min="1" max="50" />
+          <label for="seat">請選擇您的外班代號（編號）：</label>
+          <select id="seat">
+            ${Array.from({ length: 30 }, (_, i) => `<option value="G${i+1}">G${i+1}</option>`).join("")}
+          </select>
         `;
       }
     }
@@ -62,19 +113,20 @@
 
       document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
 
-      fetch(scriptURL, {
+      // 用 no-cors 避開瀏覽器擋下跨域錯誤
+      fetch("https://script.google.com/macros/s/AKfycbxhcGP85HbgYM0YUpzKBHcSrTPKSKDSv3kYuE9jcQ-Req_X2JACyw1gBnafRO7H5vnP/exec", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           type: "login",
           StudentName: name,
           StudentID: id,
           time: new Date().toISOString()
         })
-      })
-      .then(res => res.text())
-      .then(msg => console.log("✅ 已送出到 Google Sheets：" + msg))
-      .catch(err => console.error("❌ 傳送失敗：", err));
+      });
     }
   </script>
 </body>
