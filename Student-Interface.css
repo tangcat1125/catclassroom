@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>學生互動畫面</title>
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", sans-serif;
+      background: #f5f8fa;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    .top-info {
+      text-align: right;
+      font-size: 16px;
+      color: #b22222;
+      margin-bottom: 10px;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 28px;
+      color: #3366cc;
+      margin-bottom: 20px;
+    }
+
+    .status-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .light {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: orange;
+      box-shadow: 0 0 10px rgba(255, 165, 0, 0.6);
+    }
+
+    .light.red {
+      background: crimson;
+      box-shadow: 0 0 10px rgba(220, 20, 60, 0.6);
+    }
+
+    .label {
+      font-size: 18px;
+      color: #333;
+      text-align: center;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background: #3366cc;
+      color: white;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #2852a0;
+    }
+
+    .choice-group {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    #help-box {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    #help-box textarea {
+      width: 80%;
+      height: 100px;
+      font-size: 16px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+
+    .send-btn {
+      background: #28a745;
+      color: white;
+    }
+
+    .send-btn:hover {
+      background: #218838;
+    }
+
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    .tools button {
+      margin: 5px;
+    }
+
+    .hide {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-info">
+    <div>班級：六年0班</div>
+    <div>姓名：米米</div>
+  </div>
+
+  <h2 class="title">學生畫面</h2>
+
+  <div class="status-panel">
+    <div>
+      <div class="light" id="help-light"></div>
+      <div class="label">滑動式<br>我要求救</div>
+    </div>
+    <div>
+      <div class="light red" id="question-light"></div>
+      <div class="label">紅燈亮表示<br>老師有出題</div>
+    </div>
+  </div>
+
+  <div id="question-area" class="hide">
+    <h3>請選擇正確答案</h3>
+    <button class="btn">✔ 是</button>
+    <button class="btn">✘ 否</button>
+    <div class="choice-group">
+      <button class="btn">A</button>
+      <button class="btn">B</button>
+      <button class="btn">C</button>
+      <button class="btn">D</button>
+    </div>
+  </div>
+
+  <div id="help-box" class="hide">
+    <textarea placeholder="請輸入想告訴老師的訊息..."></textarea>
+    <button class="send-btn">送出</button>
+  </div>
+
+  <div id="screenshot-modal" class="modal hide">
+    <div class="modal-content">
+      <h3>老師截圖問題</h3>
+      <canvas id="canvas"></canvas>
+      <div class="tools">
+        <button>劃線</button>
+        <button>標記</button>
+        <button>全部清除</button>
+        <button class="send-btn">送出</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // JS 控制功能待實作
+  </script>
+</body>
+</html>
