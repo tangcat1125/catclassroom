@@ -1,133 +1,64 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>學生登入 - 白貓工作室</title>
-  <style>
-    body {
-      font-family: "Microsoft JhengHei";
-      background: #f4f4f4;
-      padding: 20px;
-    }
-    .container {
-      max-width: 500px;
-      margin: auto;
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.08);
-    }
-    h2 {
-      color: #3366cc;
-      font-size: 24px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    label {
-      margin-top: 16px;
-      display: block;
-      font-size: 18px;
-    }
-    input, select {
-      width: 100%;
-      padding: 14px;
-      font-size: 18px;
-      margin-top: 8px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-    button.btn {
-      width: 100%;
-      background: #3366cc;
-      color: white;
-      padding: 16px;
-      font-size: 18px;
-      margin-top: 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button.btn:hover {
-      background-color: #2852a0;
-    }
-    .note {
-      margin-top: 14px;
-      font-size: 16px;
-      color: green;
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2>學生登入</h2>
+body {
+  font-family: "Microsoft JhengHei", sans-serif;
+  background-color: #f3f6fa;
+  padding: 40px 16px;
+  margin: 0;
+}
 
-    <label>我是...</label>
-    <select id="mode" onchange="toggleMode()">
-      <option value="self">本班學生</option>
-      <option value="guest">其他班來賓</option>
-    </select>
+.container {
+  max-width: 480px;
+  margin: auto;
+  background-color: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
 
-    <label for="name">請輸入您的暱稱或本名：</label>
-    <input type="text" id="name" placeholder="如：小熊 / 晏廷 / Lily" />
+h2 {
+  font-size: 26px;
+  color: #3366cc;
+  text-align: center;
+  margin-bottom: 24px;
+}
 
-    <div id="seat-box">
-      <label for="seat">請輸入您的座號（數字）：</label>
-      <input type="number" id="seat" min="1" max="50" />
-    </div>
+label {
+  display: block;
+  margin-top: 16px;
+  font-size: 18px;
+  color: #333;
+}
 
-    <button class="btn" onclick="submitLogin()">登入教室</button>
-    <div id="result" class="note"></div>
-  </div>
+input,
+select {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-top: 6px;
+  box-sizing: border-box;
+}
 
-  <script>
-    function toggleMode() {
-      const mode = document.getElementById("mode").value;
-      const seatBox = document.getElementById("seat-box");
-      if (mode === "self") {
-        seatBox.innerHTML = `
-          <label for="seat">請輸入您的座號（數字）：</label>
-          <input type="number" id="seat" min="1" max="50" />
-        `;
-      } else {
-        seatBox.innerHTML = `
-          <label for="seat">請選擇您的外班代號（編號）：</label>
-          <select id="seat">
-            ${Array.from({ length: 30 }, (_, i) => `<option value="G${i+1}">G${i+1}</option>`).join("")}
-          </select>
-        `;
-      }
-    }
+button.btn {
+  width: 100%;
+  margin-top: 24px;
+  padding: 16px;
+  font-size: 18px;
+  background-color: #3366cc;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
 
-    function submitLogin() {
-      const name = document.getElementById("name").value.trim();
-      const seat = document.getElementById("seat").value;
-      const mode = document.getElementById("mode").value;
-      const id = (mode === "self") ? seat.padStart(2, "0") : seat;
+button.btn:hover {
+  background-color: #284e9e;
+}
 
-      if (!name || !seat) {
-        alert("請完整填寫暱稱與座號！");
-        return;
-      }
-
-      document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
-
-      // 用 no-cors 避開瀏覽器擋下跨域錯誤
-      fetch("https://script.google.com/macros/s/AKfycbxhcGP85HbgYM0YUpzKBHcSrTPKSKDSv3kYuE9jcQ-Req_X2JACyw1gBnafRO7H5vnP/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          type: "login",
-          StudentName: name,
-          StudentID: id,
-          time: new Date().toISOString()
-        })
-      });
-    }
-  </script>
-</body>
-</html>
+.note {
+  margin-top: 18px;
+  font-size: 16px;
+  color: green;
+  text-align: center;
+}
