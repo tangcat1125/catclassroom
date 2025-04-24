@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>學生登入 - 白貓工作室</title>
   <style>
@@ -10,7 +10,6 @@
       background: #f9f9f9;
       padding: 20px;
     }
-
     .container {
       max-width: 480px;
       margin: auto;
@@ -19,20 +18,17 @@
       border-radius: 12px;
       box-shadow: 0 0 12px rgba(0,0,0,0.08);
     }
-
     h2 {
       color: #3366cc;
       font-size: 24px;
       text-align: center;
       margin-bottom: 20px;
     }
-
     label {
       margin-top: 16px;
       display: block;
       font-size: 18px;
     }
-
     input, select {
       width: 100%;
       padding: 14px;
@@ -41,7 +37,6 @@
       border: 1px solid #ccc;
       border-radius: 8px;
     }
-
     button.btn {
       width: 100%;
       background: #3366cc;
@@ -53,11 +48,9 @@
       border-radius: 8px;
       cursor: pointer;
     }
-
     button.btn:hover {
       background-color: #2852a0;
     }
-
     .note {
       margin-top: 14px;
       font-size: 16px;
@@ -69,7 +62,6 @@
 <body>
   <div class="container">
     <h2>學生登入</h2>
-
     <label>我是...</label>
     <select id="mode" onchange="toggleMode()">
       <option value="self">本班學生</option>
@@ -120,21 +112,15 @@
 
       document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
 
-      fetch("https://script.google.com/macros/s/AKfycbxhcGP85HbgYM0YUpzKBHcSrTPKSKDSv3kYuE9jcQ-Req_X2JACyw1gBnafRO7H5vnP/exec", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          type: "login",
-          StudentName: name,
-          StudentID: id,
-          time: new Date().toISOString()
-        })
-      })
-      .then(res => res.text())
-      .then(msg => console.log("✅ 已送出到 Google Sheets：" + msg))
-      .catch(err => console.error("❌ 傳送失敗：", err));
+      google.script.run.withFailureHandler(function(err) {
+        document.getElementById("result").innerText = "❌ 傳送失敗，請稍後再試。";
+        console.error("Error:", err);
+      }).withSuccessHandler(function(msg) {
+        console.log("✅ 送出成功：", msg);
+      }).logStudent({
+        StudentName: name,
+        StudentID: id
+      });
     }
   </script>
 </body>
