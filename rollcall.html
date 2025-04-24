@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>學生登入 - 白貓工作室</title>
-  <link rel="stylesheet" href="rollcall-style.css" />
+  <link rel="stylesheet" href="rollcall-style.css">
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 </head>
@@ -31,7 +31,7 @@
   </div>
 
   <script>
-    // ✅ Firebase 設定（替換成你自己的專案資訊）
+    // Firebase 設定
     const firebaseConfig = {
       databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app/"
     };
@@ -74,7 +74,7 @@
         Timestamp: timestamp
       };
 
-      firebase.database().ref("login/" + id).set(loginData)
+      db.ref("login/" + id).set(loginData)
         .then(() => {
           document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
         })
