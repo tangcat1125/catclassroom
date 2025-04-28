@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新增題目 - 白貓工作室</title>
+  <link rel="stylesheet" href="../task-system/task-style.css">
+</head>
+<body>
+  <header>
+    <h1>新增題目 - 白貓工作室</h1>
+    <button onclick="window.location.href='task-center.html'">← 返回派題中心</button>
+  </header>
+
+  <main>
+    <section class="editor-section">
+      <label>題目類型：</label>
+      <select id="questionType">
+        <option value="truefalse">是非題</option>
+        <option value="choice">選擇題</option>
+        <option value="shortanswer">簡答題</option>
+        <option value="image">圖片題</option>
+      </select>
+
+      <label>題目問題：</label>
+      <textarea id="questionText" rows="4" placeholder="輸入問題內容..."></textarea>
+
+      <div id="choiceOptions" style="display:none;">
+        <label>選項：</label><br>
+        <input type="text" id="optionA" placeholder="A選項">
+        <input type="text" id="optionB" placeholder="B選項">
+        <input type="text" id="optionC" placeholder="C選項">
+        <input type="text" id="optionD" placeholder="D選項">
+      </div>
+
+      <div id="imageUpload" style="display:none;">
+        <label>上傳圖片：</label>
+        <input type="file" id="questionImage">
+      </div>
+
+      <label>正確答案：</label>
+      <input type="text" id="correctAnswer" placeholder="輸入正確答案">
+
+      <button id="saveQuestionBtn">儲存題目</button>
+      <button id="generateAIQuestionBtn">🤖 AI自動生成題目</button>
+    </section>
+
+    <hr>
+
+    <section class="ai-helper">
+      <h2>🔍 使用 ChatGPT 協助出題</h2>
+      <p>想要快速獲得題目，可以點擊下面網址，幫你快速生成題目：</p>
+      <a href="https://chat.openai.com/" target="_blank">➔ 前往 ChatGPT</a>
+
+      <h3>推薦指令：</h3>
+      <ul>
+        <li>是非題：「請用中文出一題是非題，主題是『氣候變遷』，幫我正確标記答案。」</li>
+        <li>選擇題：「請用中文生成一題國小五年級等級的四選一選擇題，主題是『太陽系行星』，並正確標示答案。」</li>
+        <li>簡答題：「請用中文出一題簡答題，主題是『孔子與儒家思想』，幫我寫出參考正義答案。」</li>
+      </ul>
+
+      <h3>🤖 指令小精靈</h3>
+      <div>
+        <label>題型：</label>
+        <select id="promptType">
+          <option value="truefalse">是非題</option>
+          <option value="choice">選擇題</option>
+          <option value="shortanswer">簡答題</option>
+        </select>
+        <label>主題：</label>
+        <input type="text" id="promptSubject" placeholder="輸入主題">
+        <label>學段：</label>
+        <select id="promptLevel">
+          <option value="國小中年級">國小中年級</option>
+          <option value="國小高年級">國小高年級</option>
+          <option value="國中">國中</option>
+        </select>
+        <button onclick="generatePrompt()">生成指令</button>
+        <textarea id="generatedPrompt" rows="4" placeholder="指令會顯示在此..."></textarea>
+        <button onclick="copyPrompt()">複製指令</button>
+      </div>
+    </section>
+
+  <script src="../task-system/task-editor.js"></script>
+  <script>
+    async function generateQuestionFromHuggingFace() {
+      const response = await fetch('https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer YOUR_HUGGINGFACE_API_TOKEN',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          inputs: "請生成一題簡單的國文題目，含有題目、四個選項，並檢視正確答案。"
+        })
+      });
+      const data = await response.json();
+      console.log(data);
+    }
+
+    document.getElementById('generateAIQuestionBtn').addEventListener('click', generateQuestionFromHuggingFace);
+
+    function generatePrompt() {
+      const type = document.getElementById('promptType').value;
+      const subject = document.getElementById('promptSubject').value;
+      const level = document.getElementById('promptLevel').value;
+      let prompt = '';
+      if (type === 'truefalse') {
+        prompt = `請用中文為${level}學生出一題是非題，主題是『${subject}』，幫我正確標示答案。`;
+      } else if (type === 'choice') {
+        prompt = `請用中文為${level}學生生成一題四選一的選擇題，主題是『${subject}』，並正確標示答案。`;
+      } else if (type === 'shortanswer') {
+        prompt = `請用中文為${level}學生出一題簡答題，主題是『${subject}』，幫我寫出參考正義答案。`;
+      }
+      document.getElementById('generatedPrompt').value = prompt;
+    }
+
+    function copyPrompt() {
+      const textarea = document.getElementById('generatedPrompt');
+      textarea.select();
+      document.execCommand('copy');
+      alert('指令已複製！');
+    }
+  </script>
+</body>
+</html>
