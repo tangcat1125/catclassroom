@@ -1,4 +1,4 @@
-// task-editor.js - 處理 task-editor.html 的互動與儲存
+// task-editor.js - 白貓工作室 出題系統 升級版
 
 import { taskDatabase } from "./firebase-config-task.js";
 import { ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
@@ -130,12 +130,12 @@ function saveQuestionToFirebase() {
   const newQuestionRef = push(ref(taskDatabase, '/questions'));
   set(newQuestionRef, questionData)
     .then(() => {
-      alert('✅ 題目成功儲存！');
+      alert('✅ 題目已成功儲存到Firebase！');
       clearForm();
     })
     .catch((error) => {
-      console.error('❌ 儲存題目失敗：', error);
-      alert('儲存失敗，請查看控制台錯誤訊息');
+      console.error('❌ 儲存失敗：', error);
+      alert('儲存失敗，請查看控制台錯誤訊息！');
     });
 }
 
@@ -161,4 +161,4 @@ function clearForm() {
   imageUploadDiv.style.display = 'none';
 }
 
-console.log('✅ task-editor.js 已升級完成！');
+console.log('✅ task-editor.js 已完整升級完成！');
