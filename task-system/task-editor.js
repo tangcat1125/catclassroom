@@ -6,6 +6,10 @@ import { ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.1/fireba
 // 取得 DOM 元素
 const questionTypeSelect = document.getElementById('questionType');
 const questionTextInput = document.getElementById('questionText');
+const questionDateInput = document.getElementById('questionDate');
+const courseLevelSelect = document.getElementById('courseLevel');
+const subjectSelect = document.getElementById('subject');
+
 const choiceOptionsDiv = document.getElementById('choiceOptions');
 const option1Input = document.getElementById('option1');
 const option2Input = document.getElementById('option2');
@@ -19,37 +23,29 @@ const multiAnswerCheckboxes = document.getElementById('multiAnswerCheckboxes');
 
 const saveQuestionBtn = document.getElementById('saveQuestionBtn');
 
-// 題型變更時，切換正確答案欄位
+// 題型變更時切換正確答案欄位
 questionTypeSelect.addEventListener('change', () => {
   const selectedType = questionTypeSelect.value;
-  
-  // 隱藏所有正確答案欄位
+
   correctAnswerSelect.style.display = 'none';
   correctAnswerInput.style.display = 'none';
   multiAnswerCheckboxes.style.display = 'none';
-  
-  // 預設隱藏選項區
   choiceOptionsDiv.style.display = 'none';
   imageUploadDiv.style.display = 'none';
 
   if (selectedType === 'choice' || selectedType === 'highschool') {
-    // 單選題
     choiceOptionsDiv.style.display = 'block';
     setupCorrectAnswerSelect(['1', '2', '3', '4']);
     correctAnswerSelect.style.display = 'inline-block';
   } else if (selectedType === 'multichoice') {
-    // 複選題
     choiceOptionsDiv.style.display = 'block';
     multiAnswerCheckboxes.style.display = 'block';
   } else if (selectedType === 'truefalse') {
-    // 是非題
     setupCorrectAnswerSelect(['是', '否']);
     correctAnswerSelect.style.display = 'inline-block';
   } else if (selectedType === 'shortanswer') {
-    // 簡答題
     correctAnswerInput.style.display = 'inline-block';
   } else if (selectedType === 'image') {
-    // 圖片題（目前不支援）
     imageUploadDiv.style.display = 'block';
     correctAnswerInput.style.display = 'inline-block';
   }
@@ -66,15 +62,23 @@ function setupCorrectAnswerSelect(options) {
   });
 }
 
-// 點擊儲存按鈕時，儲存題目
+// 儲存按鈕點擊
 saveQuestionBtn.addEventListener('click', saveQuestionToFirebase);
 
+// 核心：儲存題目到 Firebase
 function saveQuestionToFirebase() {
   const type = questionTypeSelect.value;
   const text = questionTextInput.value.trim();
+  const date = questionDateInput.value;
+  const courseLevel = courseLevelSelect.value;
+  const subject = subjectSelect.value;
 
   if (!text) {
     alert('請輸入題目內容！');
+    return;
+  }
+  if (!date) {
+    alert('請選擇出題日期！');
     return;
   }
 
@@ -87,7 +91,6 @@ function saveQuestionToFirebase() {
       return;
     }
   } else if (type === 'multichoice') {
-    // 複選題
     const selectedOptions = [];
     multiAnswerCheckboxes.querySelectorAll('input[type="checkbox"]').forEach(cb => {
       if (cb.checked) selectedOptions.push(cb.value);
@@ -96,7 +99,7 @@ function saveQuestionToFirebase() {
       alert('請至少勾選一個正確答案！');
       return;
     }
-    answer = selectedOptions; // 儲存成陣列
+    answer = selectedOptions;
   } else if (type === 'shortanswer' || type === 'image') {
     answer = correctAnswerInput.value.trim();
     if (!answer) {
@@ -105,10 +108,13 @@ function saveQuestionToFirebase() {
     }
   }
 
-  // 準備要存到Firebase的資料
+  // 準備存進Firebase的資料
   const questionData = {
     type,
     text,
+    date,
+    courseLevel,
+    subject,
     answer
   };
 
@@ -121,7 +127,6 @@ function saveQuestionToFirebase() {
     };
   }
 
-  // 存到Firebase
   const newQuestionRef = push(ref(taskDatabase, '/questions'));
   set(newQuestionRef, questionData)
     .then(() => {
@@ -137,6 +142,9 @@ function saveQuestionToFirebase() {
 // 清空表單
 function clearForm() {
   questionTextInput.value = '';
+  questionDateInput.value = '';
+  courseLevelSelect.selectedIndex = 0;
+  subjectSelect.selectedIndex = 0;
   option1Input.value = '';
   option2Input.value = '';
   option3Input.value = '';
@@ -153,4 +161,4 @@ function clearForm() {
   imageUploadDiv.style.display = 'none';
 }
 
-console.log('✅ task-editor.js 已載入完成！');
+console.log('✅ task-editor.js 已升級完成！');
