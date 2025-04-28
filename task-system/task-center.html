@@ -7,7 +7,13 @@
   <link rel="stylesheet" href="../task-system/task-style.css">
 </head>
 <body>
+
   <header>
+    <div class="wizard-section">
+      <p>🪄 這裡有出題小精靈可以幫你快速新增題目喔！</p>
+      <button onclick="window.location.href='task-editor.html'">🪄 開啟出題小精靈</button>
+    </div>
+
     <h1>派題中心 - 白貓工作室</h1>
 
     <div class="filter-section">
@@ -46,15 +52,12 @@
       <div id="questionList">
         <!-- 題目列表會顯示在這 -->
       </div>
-      <button id="newQuestionBtn">➕ 新增題目</button>
     </section>
 
     <section class="assign-section">
       <h2>派送控制</h2>
       <button id="assignBtn">派送選取題目</button>
     </section>
-
-
   </main>
 
   <!-- 連到新版 task-manage.js -->
