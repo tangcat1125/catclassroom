@@ -29,6 +29,27 @@
       <label>題目內容：</label>
       <textarea id="questionText" rows="4" placeholder="請輸入題目內容..."></textarea>
 
+      <label>出題日期：</label>
+      <input type="date" id="questionDate">
+
+      <label>學程：</label>
+      <select id="courseLevel">
+        <option value="國小中年級">國小中年級</option>
+        <option value="國小高年級">國小高年級</option>
+        <option value="國中">國中</option>
+        <option value="高中">高中</option>
+      </select>
+
+      <label>科目：</label>
+      <select id="subject">
+        <option value="國語">國語</option>
+        <option value="數學">數學</option>
+        <option value="自然">自然</option>
+        <option value="社會">社會</option>
+        <option value="英文">英文</option>
+        <option value="其他">其他</option>
+      </select>
+
       <div id="choiceOptions" style="display:none;">
         <label>選項：</label><br>
         <input type="text" id="option1" placeholder="1選項">
@@ -44,7 +65,7 @@
 
       <label>正確答案：</label>
 
-      <!-- 單選答案 -->
+      <!-- 單選正確答案 -->
       <select id="correctAnswerSelect" style="display: none;">
         <!-- 內容由JS動態生成 -->
       </select>
@@ -98,10 +119,10 @@
     </section>
   </main>
 
-  <!-- 連到新版 task-editor.js -->
+  <!-- 連到 task-editor.js -->
   <script type="module" src="../task-system/task-editor.js"></script>
 
-  <!-- 內建生成指令的小工具 -->
+  <!-- AI指令產生器 -->
   <script>
     function generatePrompt() {
       const type = document.getElementById('promptType').value;
