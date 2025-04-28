@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>出題小精靈 - 白貓工作室</title>
+  <!-- 確保 CSS 路徑正確 -->
   <link rel="stylesheet" href="../task-system/task-style.css">
   <style>
     /* Optional: Style the footer to stick at the bottom */
@@ -11,41 +12,116 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      margin: 0; /* Remove default body margin */
     }
     main {
       flex-grow: 1; /* Allow main content to grow */
+      padding: 1rem; /* Add some padding */
+    }
+    header {
+        background-color: #f8f9fa; /* Light background for header */
+        padding: 1rem;
+        text-align: center;
+        border-bottom: 1px solid #dee2e6;
     }
     footer {
-      text-align: center; /* Center the button in the footer */
+      text-align: center;
       padding: 1rem 0;
-      margin-top: 2rem; /* Add some space above the footer */
-      border-top: 1px solid #eee; /* Optional separator line */
+      margin-top: 2rem;
+      border-top: 1px solid #eee;
+      background-color: #f8f9fa; /* Match header background */
     }
-    /* Style for the textarea to indicate it's readonly */
+    /* Style for the readonly textarea */
     #generatedInstruction {
         background-color: #f8f8f8;
+        width: 95%; /* Adjust width */
+        max-width: 600px; /* Optional max width */
+    }
+    /* Style for the bulk input textarea */
+     #bulkQuestionInput {
+        width: 95%; /* Adjust width */
+        max-width: 600px; /* Optional max width */
+    }
+    /* Improve spacing for labels and inputs/selects */
+    label {
+        display: inline-block;
+        margin-bottom: 0.5rem;
+        min-width: 80px; /* Align labels */
+    }
+    input[type="text"],
+    input[type="date"],
+    select {
+        margin-bottom: 1rem;
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    button {
+        padding: 0.5rem 1rem;
+        margin: 0.25rem;
+        cursor: pointer;
+        border: 1px solid transparent;
+        border-radius: 0.25rem;
+    }
+    /* Style AI tool buttons */
+    #aiToolsSection button {
+        background-color: #28a745; /* Green */
+        color: white;
+        border-color: #28a745;
+    }
+    #saveBulkQuestionsBtn {
+         background-color: #007bff; /* Blue */
+         color: white;
+         border-color: #007bff;
+    }
+    footer button {
+        background-color: #6c757d; /* Gray */
+        color: white;
+        border-color: #6c757d;
+    }
+    footer button img {
+         vertical-align: middle;
+         margin-right: 5px;
+    }
+    hr {
+        margin: 2rem 0;
+    }
+    small {
+        display: inline-block; /* Allow margin */
+        margin-bottom: 1rem;
+        color: #6c757d;
+    }
+    h2 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        color: #343a40;
+    }
+    h3 {
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        color: #495057;
     }
   </style>
 </head>
 <body>
   <header>
     <h1>出題小精靈</h1>
-    <!-- 移除了多餘的 "使用人工智慧" 按鈕 -->
   </header>
 
   <main>
     <!-- 出題小精靈提示區塊 -->
     <section class="wizard-section">
-      <h2>選擇學程、科目、出題主題</h2>
+      <h2>1. 產生 AI 出題指令</h2>
+      <p>請選擇條件，我們會產生一段指令，讓您貼到 AI 工具 (如 ChatGPT, Gemini) 來生成題目。</p>
 
-      <form id="wizardForm">
+      <form id="wizardForm" onsubmit="return false;"> <!-- Prevent default form submission -->
         <label for="wizardCourseLevel">學程：</label>
         <select id="wizardCourseLevel">
           <option value="國小中年級">國小中年級</option>
           <option value="國小高年級">國小高年級</option>
           <option value="國中">國中</option>
           <option value="高中">高中</option>
-        </select><br><br>
+        </select><br>
 
         <label for="wizardSubject">科目：</label>
         <select id="wizardSubject">
@@ -54,10 +130,10 @@
           <option value="自然">自然</option>
           <option value="社會">社會</option>
           <option value="英文">英文</option>
-        </select><br><br>
+        </select><br>
 
         <label for="wizardTopic">出題主題：</label>
-        <input type="text" id="wizardTopic" placeholder="例如：臺灣的地形、分數的加減"><br><br>
+        <input type="text" id="wizardTopic" placeholder="例如：臺灣的地形、分數的加減、光合作用"><br>
 
         <label for="promptType">選擇題型：</label>
         <select id="promptType">
@@ -65,39 +141,57 @@
           <option value="choice">選擇題</option>
           <option value="multichoice">複選題</option>
           <option value="shortanswer">簡答題</option>
+          <option value="calculation">計算題</option>
+        </select><br>
+
+        <label for="numQuestions">生成題數：</label>
+        <select id="numQuestions">
+          <option value="3" selected>3 題</option>
+          <option value="4">4 題</option>
+          <option value="5">5 題</option>
+          <option value="6">6 題</option>
+          <option value="7">7 題</option>
+          <option value="8">8 題</option>
+          <option value="9">9 題</option>
+          <option value="10">10 題</option>
         </select><br><br>
 
-        <button type="button" onclick="generateInstruction()">生成指令</button>
+        <button type="button" onclick="generateInstruction()">🚀 生成 AI 指令</button>
       </form>
 
       <!-- 顯示生成的指令 -->
       <div id="generatedInstructionSection" style="display: none; margin-top: 20px;">
-        <h3>生成的 AI 指令：</h3>
-        <textarea id="generatedInstruction" rows="8" readonly></textarea><br><br>
-        <button type="button" onclick="copyInstruction()">複製指令</button>
+        <h3>🤖 生成的 AI 指令：</h3>
+        <textarea id="generatedInstruction" rows="12" readonly></textarea><br><br>
+        <button type="button" onclick="copyInstruction()">📋 複製指令</button>
       </div>
 
       <!-- 選擇生成工具 -->
       <div id="aiToolsSection" style="display: none; margin-top: 20px;">
-        <h2>將指令貼入 AI 工具生成題目：</h2>
-        <button onclick="useAI('ChatGPT', 'https://chat.openai.com/')">複製指令並開啟 ChatGPT</button>
-        <button onclick="useAI('Grok3', 'https://grok3.com/')">複製指令並開啟 Grok3</button> <!-- 假設 Grok3 網址 -->
-        <button onclick="useAI('Gemini', 'https://gemini.google.com/')">複製指令並開啟 Gemini</button>
+        <h3>貼到 AI 工具以生成題目：</h3>
+        <button onclick="useAI('ChatGPT', 'https://chat.openai.com/')">開啟 ChatGPT</button>
+        <button onclick="useAI('Grok3', 'https://grok.x.ai/')">開啟 Grok</button> <!-- 更新為 Grok 常用網址 -->
+        <button onclick="useAI('Gemini', 'https://gemini.google.com/')">開啟 Gemini</button>
+        <p><small>提醒：點擊上方按鈕會先嘗試複製指令，再開啟新分頁。</small></p>
       </div>
     </section>
 
-    <hr style="margin: 30px 0;"> <!-- 分隔線 -->
+    <hr> <!-- 分隔線 -->
 
     <!-- 海量貼題區 -->
     <section class="bulk-question-section">
-      <h2>🔹 貼上現有題目區 (僅限是非題)</h2>
-      <small>※ 每一行一題，格式必須以 (○) 或 (×) 開頭，例如：(○) 太陽從東邊升起。</small><br><br>
-      <textarea id="bulkQuestionInput" rows="15" placeholder="請貼上是非題題目，每行像這樣：(○) 1+1=2"></textarea>
+      <h2>2. 貼上 AI 生成的題目 (或手動輸入)</h2>
+      <p>將 AI 工具生成的題目貼到下方，或手動輸入。請確保格式符合要求 (答案標記在前)。</p>
+      <small>※ 每一行一題。是非題：(○)/(×) 開頭；選擇題：(正確選項代號) 開頭；複選題：(選項,選項) 開頭；簡答題：(參考答案) 開頭；計算題：(答案數值) 開頭。</small><br><br>
+      <textarea id="bulkQuestionInput" rows="15" placeholder="例如：
+(○) 太陽從東邊升起。
+(B) 台灣最高的山是？ (A) 阿里山 (B) 玉山 (C) 合歡山 (D) 陽明山
+(15) 計算 3 * 5 = ?"></textarea>
 
-      <h2>🔹 題目設定 (儲存用)</h2>
+      <h2 style="margin-top: 2rem;">3. 設定題目屬性並儲存</h2>
 
       <label for="questionDate">出題日期：</label>
-      <input type="date" id="questionDate"><br><br>
+      <input type="date" id="questionDate"><br>
 
       <label for="courseLevel">學程：</label>
       <select id="courseLevel">
@@ -105,7 +199,7 @@
         <option value="國小高年級">國小高年級</option>
         <option value="國中">國中</option>
         <option value="高中">高中</option>
-      </select><br><br>
+      </select><br>
 
       <label for="subject">科目：</label>
       <select id="subject">
@@ -117,7 +211,8 @@
         <option value="其他">其他</option>
       </select><br><br>
 
-      <button id="saveBulkQuestionsBtn" onclick="saveBulkQuestions()">💾 儲存全部題目到Firebase</button>
+      <button id="saveBulkQuestionsBtn" onclick="saveBulkQuestions()">💾 儲存全部題目到 Firebase</button>
+      <p><small>儲存功能需要 Firebase 正確設定，並由 task-editor.js 提供支援。</small></p>
     </section>
 
   </main>
@@ -125,133 +220,196 @@
   <!-- 貓腳印返回前一頁 -->
   <footer>
     <button onclick="window.location.href='https://tangcat1125.github.io/catclassroom/task-system/task-center.html'">
-      <img src="cat-paw-icon.png" alt="返回任務中心" width="30" style="vertical-align: middle; margin-right: 5px;"> 返回任務中心
+      <!-- 確認圖片路徑是否正確 -->
+      <img src="cat-paw-icon.png" alt="返回任務中心" width="24" height="24"> 返回任務中心
     </button>
   </footer>
 
-  <!-- 將腳本移至 body 結束前 -->
+  <!-- JavaScript 程式碼 -->
   <script>
     // --- AI 指令生成邏輯 ---
 
-    // 將題型代碼轉換為中文名稱
     function getQuestionTypeName(typeValue) {
-        switch (typeValue) {
-            case 'truefalse': return '是非題';
-            case 'choice': return '選擇題 (單選)';
-            case 'multichoice': return '複選題';
-            case 'shortanswer': return '簡答題';
-            default: return '未知題型';
-        }
+      switch (typeValue) {
+        case 'truefalse': return '是非題';
+        case 'choice': return '選擇題';
+        case 'multichoice': return '複選題';
+        case 'shortanswer': return '簡答題';
+        case 'calculation': return '計算題';
+        default: return '未知題型';
+      }
     }
 
-    // 生成 AI 指令
     function generateInstruction() {
-        const courseLevel = document.getElementById('wizardCourseLevel').value;
-        const subject = document.getElementById('wizardSubject').value;
-        const topic = document.getElementById('wizardTopic').value.trim(); // 去除前後空白
-        const questionType = document.getElementById('promptType').value;
-        const questionTypeName = getQuestionTypeName(questionType);
+      const courseLevel = document.getElementById('wizardCourseLevel').value;
+      const subject = document.getElementById('wizardSubject').value;
+      const topic = document.getElementById('wizardTopic').value.trim();
+      const questionType = document.getElementById('promptType').value;
+      const questionTypeName = getQuestionTypeName(questionType);
+      const numQuestions = document.getElementById('numQuestions').value;
 
-        if (!topic) {
-            alert('請輸入「出題主題」！');
-            document.getElementById('wizardTopic').focus();
-            return; // 如果主題為空，停止執行
-        }
+      if (!topic) {
+        alert('請輸入「出題主題」！');
+        document.getElementById('wizardTopic').focus();
+        return;
+      }
 
-        // 組裝 AI 指令
-        let instruction = `請你扮演一位專業的出題老師。\n`;
-        instruction += `根據以下條件，為我出一道「${questionTypeName}」：\n\n`;
-        instruction += `學程：${courseLevel}\n`;
-        instruction += `科目：${subject}\n`;
-        instruction += `主題：${topic}\n\n`;
-        instruction += `要求：\n`;
-        instruction += `- 題目必須與主題 "${topic}" 緊密相關。\n`;
-        instruction += `- 難度需符合 ${courseLevel} 學生的程度。\n`;
-        instruction += `- 題意清晰，避免模棱兩可。\n`;
+      let instruction = `請針對以下條件，生成 ${numQuestions} 道「${questionTypeName}」。\n`;
+      instruction += `主題：「${topic}」\n`;
+      instruction += `適用對象：「${courseLevel} ${subject}」學生\n\n`;
+      instruction += `**重要格式要求**：\n`;
+      instruction += `- **每一題** 都必須是 **獨立一行**。\n`;
+      instruction += `- **每一題** 都必須 **嚴格遵照** 下方指定的格式輸出，**包含答案標記在最前面**。\n`;
+      instruction += `- **絕對不要** 添加任何題號 (例如 1., 2.)、說明、引言、結語或其他額外文字。\n\n`;
+      instruction += `**輸出格式範例**：\n`;
 
-        // 根據題型添加特定要求
-        switch (questionType) {
-            case 'truefalse':
-                instruction += `- 請直接給我題目敘述，不需要包含 (○) 或 (×) 標記。\n`;
-                instruction += `- 最後請明確標示正確答案是「是」或「否」（或 True/False）。\n`;
-                break;
-            case 'choice':
-                instruction += `- 請提供 4 個選項 (A, B, C, D)，其中只有一個是正確答案。\n`;
-                instruction += `- 選項內容需具備一定的誘答性。\n`;
-                instruction += `- 最後請明確標示正確答案的選項代號 (例如：答案：C)。\n`;
-                break;
-            case 'multichoice':
-                instruction += `- 請提供 4-5 個選項 (A, B, C, D, E)，其中可能有多個正確答案。\n`;
-                instruction += `- 題目應明確指示需選出所有正確選項。\n`;
-                instruction += `- 最後請明確標示所有正確答案的選項代號 (例如：答案：A, C, D)。\n`;
-                break;
-            case 'shortanswer':
-                instruction += `- 問題應引導學生簡潔扼要地回答核心概念。\n`;
-                instruction += `- 請提供參考答案或評分標準。\n`;
-                break;
-        }
-         instruction += `\n請開始出題：`;
+      switch (questionType) {
+        case 'truefalse':
+          instruction += `(○) 這是正確的敘述範例。\n`;
+          instruction += `(×) 這是錯誤的敘述範例。\n`;
+          instruction += `(請直接判斷題目敘述的正確性，用 ○ 代表正確，× 代表錯誤)\n`;
+          break;
+        case 'choice':
+          instruction += `(C) 這是選擇題題目文字? (A) 選項A (B) 選項B (C) 選項C (D) 選項D\n`;
+          instruction += `(題目開頭的括號內，請填入**唯一**正確答案的代號)\n`;
+          instruction += `(請務必提供 A, B, C, D 四個選項)\n`;
+          break;
+        case 'multichoice':
+          instruction += `(A,C) 這是複選題題目文字? (A) 選項A (B) 選項B (C) 選項C (D) 選項D (E) 選項E\n`;
+          instruction += `(題目開頭的括號內，請填入**所有**正確答案的代號，並用**英文逗號**分隔)\n`;
+          instruction += `(請提供至少 4 個選項，其中至少有兩個是正確的)\n`;
+          break;
+        case 'shortanswer':
+          instruction += `(這是參考答案文字) 這是簡答題題目文字?\n`;
+          instruction += `(題目開頭的括號內，請填入簡潔的參考答案或關鍵字)\n`;
+          break;
+        case 'calculation':
+          instruction += `(25) 計算 5 * (3+2) = ?\n`;
+          instruction += `(100) 小華有 5 打鉛筆，一打 12 枝，請問他共有幾枝鉛筆？\n`;
+          instruction += `(題目開頭的括號內，請填入計算結果的**數值**，不要包含單位或其他文字)\n`;
+          instruction += `(題目本身需清晰說明要求計算的內容)\n`;
+          break;
+      }
+      instruction += `\n請直接開始生成 ${numQuestions} 道題目 (嚴格遵守上述格式)：`;
 
-        // 顯示生成的指令區塊
-        document.getElementById('generatedInstruction').value = instruction;
-        document.getElementById('generatedInstructionSection').style.display = 'block';
-        document.getElementById('aiToolsSection').style.display = 'block'; // 同時顯示 AI 工具按鈕
+      document.getElementById('generatedInstruction').value = instruction;
+      document.getElementById('generatedInstructionSection').style.display = 'block';
+      document.getElementById('aiToolsSection').style.display = 'block';
     }
 
-    // 複製生成的指令
     async function copyInstruction() {
-        const textarea = document.getElementById('generatedInstruction');
-        if (!textarea.value) {
-            alert('請先生成指令！');
-            return false; // 表示複製失敗
-        }
-
+      const textarea = document.getElementById('generatedInstruction');
+      if (!textarea.value) {
+        alert('請先生成指令！');
+        return false;
+      }
+      try {
+        await navigator.clipboard.writeText(textarea.value);
+        alert('AI 指令已複製到剪貼簿！');
+        return true;
+      } catch (err) {
+        console.error('無法自動複製指令: ', err);
         try {
-            await navigator.clipboard.writeText(textarea.value);
-            alert('指令已複製到剪貼簿！');
-            return true; // 表示複製成功
-        } catch (err) {
-            console.error('無法複製指令: ', err);
-            // Fallback for older browsers or insecure contexts (like http)
-            try {
-                textarea.select();
-                document.execCommand('copy');
-                alert('指令已複製到剪貼簿 (Fallback)！');
-                 return true;
-            } catch (fallbackErr) {
-                 alert('複製指令失敗，請手動複製。');
-                 console.error('Fallback 複製也失敗: ', fallbackErr);
-                 return false;
-            }
+          textarea.select(); // Select text for older browsers
+          document.execCommand('copy');
+          alert('AI 指令已複製到剪貼簿 (Fallback)！');
+          return true;
+        } catch (fallbackErr) {
+           alert('複製指令失敗，瀏覽器不支援或權限不足。\n請手動選取上方文字進行複製。');
+           console.error('Fallback 複製也失敗: ', fallbackErr);
+           textarea.focus(); // Focus for manual copy
+           textarea.select();
+           return false;
         }
+      }
     }
 
-    // 使用指定的 AI 工具
     async function useAI(aiName, aiUrl) {
-        const copied = await copyInstruction(); // 先嘗試複製
-        if (copied) {
-            // 如果複製成功，開啟新視窗
-            window.open(aiUrl, '_blank');
-            // 可以選擇性地給予提示
-            // alert(`指令已複製，正在為您開啟 ${aiName}... 請將指令貼入。`);
+      const copied = await copyInstruction();
+      if (copied) {
+        window.open(aiUrl, '_blank'); // Open AI tool in a new tab
+        // Optional: Briefly highlight the textarea to show what was copied
+        const textarea = document.getElementById('generatedInstruction');
+        textarea.focus();
+        textarea.select();
+        setTimeout(() => { try { window.getSelection().removeAllRanges(); } catch(e){} }, 1000); // Deselect after a second
+      } else {
+        // Alert already shown in copyInstruction if failed
+        // Optionally offer to open the URL anyway
+        // if (confirm(`無法自動複製指令。是否仍要開啟 ${aiName} 讓您手動貼上？`)) {
+        //   window.open(aiUrl, '_blank');
+        // }
+      }
+    }
+
+    // --- 海量貼題區相關 ---
+    // 這裡的 saveBulkQuestions 函數預計由 task-editor.js 提供
+    // 可在此添加前端驗證，例如檢查日期是否選擇等
+    function saveBulkQuestions() {
+        const dateInput = document.getElementById('questionDate');
+        const bulkInput = document.getElementById('bulkQuestionInput');
+
+        if (!dateInput.value) {
+            alert('請選擇「出題日期」！');
+            dateInput.focus();
+            return;
+        }
+        if (!bulkInput.value.trim()) {
+             alert('「貼上題目區」不能是空的！');
+            bulkInput.focus();
+            return;
+        }
+
+        // 檢查 window.saveBulkQuestions是否存在，若存在才呼叫
+        if (typeof window.saveBulkQuestions === 'function') {
+            window.saveBulkQuestions(); // 呼叫 task-editor.js 中的函數
         } else {
-            // 如果複製失敗，提示使用者
-            alert(`無法自動複製指令。請先點擊「生成指令」，然後手動複製指令文字，再打開 ${aiName}。`);
-            // 仍然可以選擇打開網址，讓使用者手動貼上
-            // window.open(aiUrl, '_blank');
+            alert('錯誤：儲存功能 (saveBulkQuestions) 未載入或發生錯誤。請檢查 task-editor.js。');
+            console.error("saveBulkQuestions function is not defined globally. Check task-editor.js loading and export.");
         }
     }
 
-    // --- 海量貼題區相關 (假設 saveBulkQuestions 在 task-editor.js 中定義) ---
-    // 這裡不需要額外的 JS，除非你要在這裡做一些前端驗證
+    // 自動填入今天的日期
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const dateInput = document.getElementById('questionDate');
+        if(dateInput) {
+           dateInput.valueAsDate = new Date();
+        }
+        // 將 wizard 的學程和科目同步到下方的選擇器，方便使用者
+        const wizardCourseLevel = document.getElementById('wizardCourseLevel');
+        const wizardSubject = document.getElementById('wizardSubject');
+        const courseLevel = document.getElementById('courseLevel');
+        const subject = document.getElementById('subject');
+
+        if (wizardCourseLevel && courseLevel) {
+            courseLevel.value = wizardCourseLevel.value; // Initial sync
+            wizardCourseLevel.addEventListener('change', () => {
+                courseLevel.value = wizardCourseLevel.value;
+            });
+        }
+         if (wizardSubject && subject) {
+            subject.value = wizardSubject.value; // Initial sync
+            wizardSubject.addEventListener('change', () => {
+                subject.value = wizardSubject.value;
+            });
+        }
+    });
 
   </script>
 
   <!-- 載入 Firebase 和你的模組腳本 -->
-  <!-- 注意：確保 task-editor.js 的路徑正確 -->
+  <!-- 重要：確保 task-editor.js 的路徑正確，並且它正確處理 Firebase -->
   <!-- 如果 task-editor.js 依賴 Firebase，請確保 Firebase SDK 已在此之前載入 -->
-  <!-- 例如：<script src="/path/to/firebase-app.js"></script> -->
-  <!--      <script src="/path/to/firebase-firestore.js"></script> -->
+  <!-- 例如：
+  <script src="https://www.gstatic.com/firebasejs/x.y.z/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/x.y.z/firebase-firestore-compat.js"></script>
+  <script>
+    // Your Firebase configuration
+    const firebaseConfig = { ... };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
+  -->
   <script type="module" src="../task-system/task-editor.js"></script>
 
 </body>
