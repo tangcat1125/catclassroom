@@ -1,61 +1,46 @@
-// task-editor.js - 白貓工作室 題目編輯控制子
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>派題中心 - 白貓工作室</title>
+  <link rel="stylesheet" href="task-style.css">
+</head>
+<body>
+  <header>
+    <h1>派題中心 - 白貓工作室</h1>
+  </header>
 
-// 保存新題目
-function saveQuestion() {
-  const type = document.getElementById('questionType').value;
-  const text = document.getElementById('questionText').value.trim();
-  const correctAnswer = document.getElementById('correctAnswer').value.trim();
+  <main>
+    <section class="course-info">
+      <input type="text" id="courseName" placeholder="課程名稱">
+      <select id="courseTime">
+        <option value="40">國小一課 (40分)</option>
+        <option value="45">國高中一課 (45分)</option>
+      </select>
+    </section>
 
-  if (!text || !correctAnswer) {
-    alert('\u984c目或\u6b63\u78ba\u7b54\u6848\u4e0d\u80fd\u7a7a\uff01');
-    return;
-  }
+    <section class="question-bank">
+      <h2>題字清單</h2>
+      <div id="questionList">
+        <!-- 現有題目列出 -->
+      </div>
+      <button id="newQuestionBtn" onclick="window.location.href='task-editor.html'">➕ 新增題目</button>
+    </section>
 
-  let questionObj = {
-    type: type,
-    text: text,
-    correctAnswer: correctAnswer
-  };
+    <section class="assign-section">
+      <h2>派送控制</h2>
+      <button id="assignBtn">派送選取題目</button>
+    </section>
 
-  if (type === 'choice') {
-    questionObj.options = {
-      A: document.getElementById('optionA').value.trim(),
-      B: document.getElementById('optionB').value.trim(),
-      C: document.getElementById('optionC').value.trim(),
-      D: document.getElementById('optionD').value.trim()
-    };
-  }
+    <section class="status-section">
+      <h2>作答狀態跟蹤</h2>
+      <div id="statusBoard">
+        <!-- 顯示學生作答狀態 -->
+      </div>
+    </section>
+  </main>
 
-  // TODO: 上傳圖片元素可以在以後進行加強
-
-  // 將新題目加入到 preparedQuestions
-  if (typeof addQuestion === 'function') {
-    addQuestion(questionObj);
-    alert('\u5df2新增題目！');
-    clearEditor();
-  } else {
-    console.error('addQuestion 函數未找到！');
-  }
-}
-
-// 清空編輯區
-function clearEditor() {
-  document.getElementById('questionText').value = '';
-  document.getElementById('correctAnswer').value = '';
-  document.getElementById('optionA').value = '';
-  document.getElementById('optionB').value = '';
-  document.getElementById('optionC').value = '';
-  document.getElementById('optionD').value = '';
-}
-
-// 操作上展：依題目類型顯示不同頁面元素
-const questionTypeSelect = document.getElementById('questionType');
-questionTypeSelect.addEventListener('change', function() {
-  const selectedType = this.value;
-  document.getElementById('choiceOptions').style.display = (selectedType === 'choice') ? 'block' : 'none';
-  document.getElementById('imageUpload').style.display = (selectedType === 'image') ? 'block' : 'none';
-});
-
-// 組對 save button
-const saveBtn = document.getElementById('saveQuestionBtn');
-saveBtn.addEventListener('click', saveQuestion);
+  <script src="task-manage.js"></script>
+</body>
+</html>
