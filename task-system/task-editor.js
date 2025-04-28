@@ -1,4 +1,4 @@
-// task-editor.js - 正式版：處理 task-editor.html 的互動與儲存
+// task-editor.js - 處理 task-editor.html 的互動與儲存
 
 import { taskDatabase } from "./firebase-config-task.js";
 import { ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
@@ -7,82 +7,121 @@ import { ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.1/fireba
 const questionTypeSelect = document.getElementById('questionType');
 const questionTextInput = document.getElementById('questionText');
 const choiceOptionsDiv = document.getElementById('choiceOptions');
-const optionAInput = document.getElementById('optionA');
-const optionBInput = document.getElementById('optionB');
-const optionCInput = document.getElementById('optionC');
-const optionDInput = document.getElementById('optionD');
-const imageUploadDiv = document.getElementById('imageUpload'); // 圖片題目前先不處理
-const correctAnswerInput = document.getElementById('correctAnswer');
+const option1Input = document.getElementById('option1');
+const option2Input = document.getElementById('option2');
+const option3Input = document.getElementById('option3');
+const option4Input = document.getElementById('option4');
+const imageUploadDiv = document.getElementById('imageUpload');
+
+const correctAnswerSelect = document.getElementById('correctAnswerSelect');
+const correctAnswerInput = document.getElementById('correctAnswerInput');
+const multiAnswerCheckboxes = document.getElementById('multiAnswerCheckboxes');
+
 const saveQuestionBtn = document.getElementById('saveQuestionBtn');
 
-// 題型變更時，控制哪些欄位要顯示
+// 題型變更時，切換正確答案欄位
 questionTypeSelect.addEventListener('change', () => {
   const selectedType = questionTypeSelect.value;
-  if (selectedType === 'choice') {
+  
+  // 隱藏所有正確答案欄位
+  correctAnswerSelect.style.display = 'none';
+  correctAnswerInput.style.display = 'none';
+  multiAnswerCheckboxes.style.display = 'none';
+  
+  // 預設隱藏選項區
+  choiceOptionsDiv.style.display = 'none';
+  imageUploadDiv.style.display = 'none';
+
+  if (selectedType === 'choice' || selectedType === 'highschool') {
+    // 單選題
     choiceOptionsDiv.style.display = 'block';
-    imageUploadDiv.style.display = 'none';
+    setupCorrectAnswerSelect(['1', '2', '3', '4']);
+    correctAnswerSelect.style.display = 'inline-block';
+  } else if (selectedType === 'multichoice') {
+    // 複選題
+    choiceOptionsDiv.style.display = 'block';
+    multiAnswerCheckboxes.style.display = 'block';
+  } else if (selectedType === 'truefalse') {
+    // 是非題
+    setupCorrectAnswerSelect(['是', '否']);
+    correctAnswerSelect.style.display = 'inline-block';
+  } else if (selectedType === 'shortanswer') {
+    // 簡答題
+    correctAnswerInput.style.display = 'inline-block';
   } else if (selectedType === 'image') {
-    choiceOptionsDiv.style.display = 'none';
+    // 圖片題（目前不支援）
     imageUploadDiv.style.display = 'block';
-  } else {
-    choiceOptionsDiv.style.display = 'none';
-    imageUploadDiv.style.display = 'none';
+    correctAnswerInput.style.display = 'inline-block';
   }
 });
 
-// 儲存按鈕點擊時
+// 建立正確答案的下拉選單選項
+function setupCorrectAnswerSelect(options) {
+  correctAnswerSelect.innerHTML = '';
+  options.forEach(opt => {
+    const optionElement = document.createElement('option');
+    optionElement.value = opt;
+    optionElement.textContent = opt;
+    correctAnswerSelect.appendChild(optionElement);
+  });
+}
+
+// 點擊儲存按鈕時，儲存題目
 saveQuestionBtn.addEventListener('click', saveQuestionToFirebase);
 
-// --- 儲存題目的核心函數 ---
 function saveQuestionToFirebase() {
   const type = questionTypeSelect.value;
   const text = questionTextInput.value.trim();
-  const answer = correctAnswerInput.value.trim();
 
   if (!text) {
     alert('請輸入題目內容！');
     return;
   }
-  if (!answer) {
-    alert('請輸入正確答案！');
-    return;
+
+  let answer = null;
+
+  if (type === 'choice' || type === 'highschool' || type === 'truefalse') {
+    answer = correctAnswerSelect.value;
+    if (!answer) {
+      alert('請選擇正確答案！');
+      return;
+    }
+  } else if (type === 'multichoice') {
+    // 複選題
+    const selectedOptions = [];
+    multiAnswerCheckboxes.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      if (cb.checked) selectedOptions.push(cb.value);
+    });
+    if (selectedOptions.length === 0) {
+      alert('請至少勾選一個正確答案！');
+      return;
+    }
+    answer = selectedOptions; // 儲存成陣列
+  } else if (type === 'shortanswer' || type === 'image') {
+    answer = correctAnswerInput.value.trim();
+    if (!answer) {
+      alert('請輸入正確答案！');
+      return;
+    }
   }
 
-  let questionData = { type, text, answer };
+  // 準備要存到Firebase的資料
+  const questionData = {
+    type,
+    text,
+    answer
+  };
 
-  if (type === 'choice') {
-    const optionA = optionAInput.value.trim();
-    const optionB = optionBInput.value.trim();
-    const optionC = optionCInput.value.trim();
-    const optionD = optionDInput.value.trim();
-
-    if (!optionA || !optionB) {
-      alert('選擇題請至少填寫A和B選項！');
-      return;
-    }
-    if (!['A', 'B', 'C', 'D'].includes(answer.toUpperCase())) {
-      alert('選擇題的正確答案必須是A、B、C、D其中之一！');
-      return;
-    }
+  if (type === 'choice' || type === 'highschool' || type === 'multichoice') {
     questionData.options = {
-      A: optionA,
-      B: optionB,
-      C: optionC,
-      D: optionD,
+      1: option1Input.value.trim(),
+      2: option2Input.value.trim(),
+      3: option3Input.value.trim(),
+      4: option4Input.value.trim(),
     };
-    questionData.answer = answer.toUpperCase(); // 統一大寫存入
-  } else if (type === 'truefalse') {
-    if (!['true', 'false', '是', '否'].includes(answer.toLowerCase())) {
-      alert('是非題的答案請填寫 True / False 或 是 / 否！');
-      return;
-    }
-    questionData.answer = (answer === '是') ? 'true' : (answer === '否') ? 'false' : answer.toLowerCase();
-  } else if (type === 'image') {
-    alert('圖片題目前不支援儲存，請選其他題型！');
-    return;
   }
 
-  // 寫入 Firebase
+  // 存到Firebase
   const newQuestionRef = push(ref(taskDatabase, '/questions'));
   set(newQuestionRef, questionData)
     .then(() => {
@@ -95,21 +134,23 @@ function saveQuestionToFirebase() {
     });
 }
 
-// --- 清空表單 ---
+// 清空表單
 function clearForm() {
   questionTextInput.value = '';
+  option1Input.value = '';
+  option2Input.value = '';
+  option3Input.value = '';
+  option4Input.value = '';
   correctAnswerInput.value = '';
-  optionAInput.value = '';
-  optionBInput.value = '';
-  optionCInput.value = '';
-  optionDInput.value = '';
+  correctAnswerSelect.innerHTML = '';
+  multiAnswerCheckboxes.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+
   questionTypeSelect.selectedIndex = 0;
   choiceOptionsDiv.style.display = 'none';
+  correctAnswerSelect.style.display = 'none';
+  correctAnswerInput.style.display = 'none';
+  multiAnswerCheckboxes.style.display = 'none';
   imageUploadDiv.style.display = 'none';
 }
 
-// --- 頁面一開始初始化 ---
-choiceOptionsDiv.style.display = 'none';
-imageUploadDiv.style.display = 'none';
-
-console.log('task-editor.js 已正確載入！');
+console.log('✅ task-editor.js 已載入完成！');
