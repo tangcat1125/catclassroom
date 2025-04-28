@@ -9,7 +9,8 @@
 <body>
   <header>
     <h1>出題小精靈</h1>
-    <button onclick="window.close()">❌ 關閉精靈</button>
+    <!-- 關閉精靈按鈕現在連到人工智慧頁面 -->
+    <button onclick="window.location.href='https://chatgpt.com/auth/login'">🔮 使用人工智慧</button>
   </header>
 
   <main>
@@ -62,7 +63,7 @@
       <button onclick="useGemini()">使用 Gemini</button>
     </section>
 
-    <!-- 海量貼題區塊 -->
+    <!-- 海量貼題區 -->
     <section class="bulk-question-section">
       <h2>🔹 貼上題目區</h2>
       <small>※每一行一題，格式必須以 (○) 或 (×) 開頭，例如：(○) 水是液態物質。</small><br><br>
@@ -91,9 +92,17 @@
         <option value="其他">其他</option>
       </select>
 
-      <button id="saveBulkQuestionsBtn">💾 儲存全部題目到Firebase</button>
+      <button id="saveBulkQuestionsBtn" onclick="saveBulkQuestions()">💾 儲存全部題目到Firebase</button>
     </section>
+
   </main>
+
+  <!-- 貓腳印返回前一頁 -->
+  <footer>
+    <button onclick="window.location.href='task-center.html'">
+      <img src="cat-paw-icon.png" alt="貓腳印" width="30"> 返回前一頁
+    </button>
+  </footer>
 
   <script type="module" src="../task-system/task-editor.js"></script>
 
