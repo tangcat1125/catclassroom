@@ -37,6 +37,14 @@
         <label>出題主題：</label>
         <input type="text" id="wizardTopic" placeholder="例如：地球、氣候變遷"><br><br>
 
+        <label>選擇題型：</label>
+        <select id="promptType">
+          <option value="truefalse">是非題</option>
+          <option value="choice">選擇題</option>
+          <option value="multichoice">複選題</option>
+          <option value="shortanswer">簡答題</option>
+        </select><br><br>
+
         <button type="button" onclick="generateQuestions()">生成題目</button>
       </form>
 
@@ -45,55 +53,86 @@
         <textarea id="generatedQuestions" rows="6" readonly></textarea><br><br>
         <button type="button" onclick="copyQuestions()">複製題目</button>
       </div>
-      
-      <!-- 新增工具選擇區塊 -->
-      <h2>選擇生成工具：</h2>
-      <button onclick="useChatGPT()">使用 ChatGPT</button>
-      <button onclick="useGrok3()">使用 Grok3</button>
-      <button onclick="useGemini()">使用 Gemini</button>
+
+      <!-- 這是新增的區塊：海量貼題功能 -->
+      <h2>🔹 貼上題目區</h2>
+      <small>※每一行一題，格式必須以 (○) 或 (×) 開頭，例如：(○) 水是液態物質。</small><br><br>
+      <textarea id="bulkQuestionInput" rows="15" placeholder="請大量貼上題目，每行像這樣：(○) 1+1=2"></textarea>
+
+      <h2>🔹 題目設定</h2>
+
+      <label>出題日期：</label>
+      <input type="date" id="questionDate">
+
+      <label>學程：</label>
+      <select id="courseLevel">
+        <option value="國小中年級">國小中年級</option>
+        <option value="國小高年級">國小高年級</option>
+        <option value="國中">國中</option>
+        <option value="高中">高中</option>
+      </select>
+
+      <label>科目：</label>
+      <select id="subject">
+        <option value="國語">國語</option>
+        <option value="數學">數學</option>
+        <option value="自然">自然</option>
+        <option value="社會">社會</option>
+        <option value="英文">英文</option>
+        <option value="其他">其他</option>
+      </select>
+
+      <button id="saveBulkQuestionsBtn">💾 儲存全部題目到Firebase</button>
     </section>
   </main>
 
+  <!-- 連接新版 task-editor.js -->
+  <script type="module" src="../task-system/task-editor.js"></script>
+
+  <!-- 出題小精靈跳窗 -->
   <script>
-    // 生成題目的邏輯
+    function openWizardWindow() {
+      // 建立跳窗
+      const wizardWindow = window.open('', '出題小精靈', 'width=600,height=400');
+
+      wizardWindow.document.write(`
+        <h1>選擇學程、科目、出題主題</h1>
+        <form id="wizardForm">
+          <label>學程：</label>
+          <select id="wizardCourseLevel">
+            <option value="國小中年級">國小中年級</option>
+            <option value="國小高年級">國小高年級</option>
+            <option value="國中">國中</option>
+            <option value="高中">高中</option>
+          </select><br><br>
+
+          <label>科目：</label>
+          <select id="wizardSubject">
+            <option value="國語">國語</option>
+            <option value="數學">數學</option>
+            <option value="自然">自然</option>
+            <option value="社會">社會</option>
+            <option value="英文">英文</option>
+          </select><br><br>
+
+          <label>出題主題：</label>
+          <input type="text" id="wizardTopic" placeholder="例如：地球、氣候變遷"><br><br>
+
+          <button type="button" onclick="generateQuestions()">生成題目</button>
+        </form>
+      `);
+    }
+
     function generateQuestions() {
       const courseLevel = document.getElementById('wizardCourseLevel').value;
       const subject = document.getElementById('wizardSubject').value;
       const topic = document.getElementById('wizardTopic').value;
 
-      // 這裡會處理選擇的工具，並生成題目
-      const generatedQuestions = `學程：${courseLevel}\n科目：${subject}\n主題：${topic}\n\n1. 這是一題關於${subject}的題目。\n2. 這是一題關於${topic}的題目。`;
+      alert(`生成題目：學程 - ${courseLevel}, 科目 - ${subject}, 主題 - ${topic}`);
 
-      // 顯示生成的題目
-      document.getElementById('generatedQuestions').value = generatedQuestions;
-      document.getElementById('generatedQuestionsSection').style.display = 'block';
-    }
-
-    // 使用 ChatGPT 生成題目
-    function useChatGPT() {
-      alert("你已選擇使用 ChatGPT 生成題目！");
-      // 在這裡，你可以進一步調用 ChatGPT 的 API 生成題目
-    }
-
-    // 使用 Grok3 生成題目
-    function useGrok3() {
-      alert("你已選擇使用 Grok3 生成題目！");
-      // 在這裡，你可以進一步調用 Grok3 的 API 生成題目
-    }
-
-    // 使用 Gemini 生成題目
-    function useGemini() {
-      alert("你已選擇使用 Gemini 生成題目！");
-      // 在這裡，你可以進一步調用 Gemini 的 API 生成題目
-    }
-
-    // 複製生成的題目
-    function copyQuestions() {
-      const textarea = document.getElementById('generatedQuestions');
-      textarea.select();
-      document.execCommand('copy');
-      alert('題目已複製！');
+      // 這裡可以接入 ChatGPT / Grok3 / Gemini API 來生成題目，然後返回顯示在原本頁面上
     }
   </script>
+
 </body>
 </html>
