@@ -20,7 +20,9 @@
       <select id="questionType">
         <option value="truefalse">是非題</option>
         <option value="choice">選擇題</option>
+        <option value="multichoice">複選題</option>
         <option value="shortanswer">簡答題</option>
+        <option value="highschool">高中題</option>
         <option value="image">圖片題</option>
       </select>
 
@@ -29,10 +31,10 @@
 
       <div id="choiceOptions" style="display:none;">
         <label>選項：</label><br>
-        <input type="text" id="optionA" placeholder="A選項">
-        <input type="text" id="optionB" placeholder="B選項">
-        <input type="text" id="optionC" placeholder="C選項">
-        <input type="text" id="optionD" placeholder="D選項">
+        <input type="text" id="option1" placeholder="1選項">
+        <input type="text" id="option2" placeholder="2選項">
+        <input type="text" id="option3" placeholder="3選項">
+        <input type="text" id="option4" placeholder="4選項">
       </div>
 
       <div id="imageUpload" style="display:none;">
@@ -41,7 +43,22 @@
       </div>
 
       <label>正確答案：</label>
-      <input type="text" id="correctAnswer" placeholder="請輸入正確答案">
+
+      <!-- 單選答案 -->
+      <select id="correctAnswerSelect" style="display: none;">
+        <!-- 內容由JS動態生成 -->
+      </select>
+
+      <!-- 簡答題 -->
+      <input type="text" id="correctAnswerInput" placeholder="請輸入正確答案" style="display: none;">
+
+      <!-- 複選題 -->
+      <div id="multiAnswerCheckboxes" style="display: none;">
+        <label><input type="checkbox" value="1"> 1</label>
+        <label><input type="checkbox" value="2"> 2</label>
+        <label><input type="checkbox" value="3"> 3</label>
+        <label><input type="checkbox" value="4"> 4</label>
+      </div>
 
       <button id="saveQuestionBtn">💾 儲存題目</button>
     </section>
@@ -56,7 +73,9 @@
       <select id="promptType">
         <option value="truefalse">是非題</option>
         <option value="choice">選擇題</option>
+        <option value="multichoice">複選題</option>
         <option value="shortanswer">簡答題</option>
+        <option value="highschool">高中題</option>
       </select>
 
       <label>主題：</label>
@@ -67,6 +86,7 @@
         <option value="國小中年級">國小中年級</option>
         <option value="國小高年級">國小高年級</option>
         <option value="國中">國中</option>
+        <option value="高中">高中</option>
       </select>
 
       <button onclick="generatePrompt()">🎯 生成指令</button>
@@ -81,7 +101,7 @@
   <!-- 連到新版 task-editor.js -->
   <script type="module" src="../task-system/task-editor.js"></script>
 
-  <!-- 簡單的內建小工具 -->
+  <!-- 內建生成指令的小工具 -->
   <script>
     function generatePrompt() {
       const type = document.getElementById('promptType').value;
@@ -93,8 +113,12 @@
         prompt = `請用中文為${level}學生出一題是非題，主題是『${subject}』，並正確標示答案。`;
       } else if (type === 'choice') {
         prompt = `請用中文為${level}學生生成一題四選一的選擇題，主題是『${subject}』，並正確標示答案。`;
+      } else if (type === 'multichoice') {
+        prompt = `請用中文為${level}學生出一題可以多選的選擇題，主題是『${subject}』，並標記所有正確選項。`;
       } else if (type === 'shortanswer') {
         prompt = `請用中文為${level}學生出一題簡答題，主題是『${subject}』，並附上參考答案。`;
+      } else if (type === 'highschool') {
+        prompt = `請用中文為${level}學生出一題高中程度的選擇題，主題是『${subject}』，並正確標示答案。`;
       }
       document.getElementById('generatedPrompt').value = prompt;
     }
