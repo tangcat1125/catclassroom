@@ -96,6 +96,46 @@ Fork 或 Clone 本倉庫
 
 支援不同學段（國小、中學、職校）
 
+資料庫說明
+📚 作答資料流程設計（雙回傳系統）
+為確保即時互動與完整記錄，學生作答時會同時更新兩個資料庫：
+
+
+資料庫	路徑	資料內容	用途
+tasks-database	/tasks/{questionId}/answers/{studentId}	座號、姓名、作答選項	統計每題答題分布（如即時顯示班級選擇）
+results-database	/results/{studentId}/{questionId}	題號、作答選項、正確與否、作答時間	個人作答歷程紀錄（供老師查詢、生成學習成果）
+🎯 資料流簡圖
+plaintext
+複製
+編輯
+(1) 老師出題 ➔ 寫入 /tasks/{questionId}
+(2) 學生UI即時讀取 ➔ /tasks/{questionId}
+(3) 學生送出作答 ➔ 同步寫入：
+    - /tasks/{questionId}/answers/{studentId}
+    - /results/{studentId}/{questionId}
+🧠 主要欄位設計建議
+tasks-database ➔ 每一題答題記錄
+
+欄位	說明
+studentId	學生座號或學號
+studentName	學生姓名
+selectedOption	學生選擇的選項（如A、B、C、D）
+results-database ➔ 每個學生的作答歷程
+
+欄位	說明
+questionId	題目ID
+selectedOption	學生選擇的選項
+isCorrect	是否答對（true/false）
+answerTime	答題完成的時間（timestamp或秒數）
+📈 未來擴充
+加入作答秒數紀錄（用於統計作答速度）
+
+分析個別學生弱點題型
+
+公開大螢幕即時顯示答題狀況
+
+自動生成學生個人學習歷程報告
+
 🙌 授權與致謝
 © 2025 白貓工作室 保留所有權利
 感謝 OpenAI、Firebase、GitHub Pages 等開源工具技術支援！
