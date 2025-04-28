@@ -1,53 +1,88 @@
-// task-manage.js - 白貓工作室 派題系統 JS控制子
+// task-manage.js - 白貓工作室 派題系統篩選版 JS
 
-// 用來存放一課程中先預備好的題目
-let preparedQuestions = [];
+import { taskDatabase } from "./firebase-config-task.js";
+import { ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+import { uploadCurrentQuestion } from "./task-database.js";
 
-// 新增一題
-function addQuestion(questionObj) {
-  preparedQuestions.push(questionObj);
-  updateQuestionList();
-}
+// 題目暫存
+let allQuestions = [];
+let filteredQuestions = [];
 
-// 更新題目清單顯示
+// DOM元素
+const questionListDiv = document.getElementById('questionList');
+const filterDateInput = document.getElementById('filterDate');
+const filterCourseLevelSelect = document.getElementById('filterCourseLevel');
+const filterSubjectSelect = document.getElementById('filterSubject');
+const filterBtn = document.getElementById('filterBtn');
+
+// 更新題目清單到畫面
 function updateQuestionList() {
-  const listDiv = document.getElementById('questionList');
-  listDiv.innerHTML = '';
+  questionListDiv.innerHTML = '';
 
-  if (preparedQuestions.length === 0) {
-    listDiv.innerHTML = '<p>\u76ee\u524d\u6c92\u6709\u4efb\u4f55\u984c\u76ee，\u8acb\u65b0\u589e\u4e00\u984c！</p>';
+  if (filteredQuestions.length === 0) {
+    questionListDiv.innerHTML = '<p>找不到符合條件的題目，請調整篩選條件。</p>';
     return;
   }
 
-  preparedQuestions.forEach((q, index) => {
+  filteredQuestions.forEach((q, index) => {
     const qDiv = document.createElement('div');
     qDiv.className = 'question-item';
-    qDiv.innerHTML = `<strong>\u984c${index + 1}:</strong> ${q.text}<br>` +
-                     `<button onclick="assignQuestion(${index})">\u6d3e\u9001\u6b64\u984c</button>`;
-    listDiv.appendChild(qDiv);
+    qDiv.innerHTML = `<strong>題${index + 1}:</strong> ${q.text}<br>` +
+                     `<button onclick="assignQuestion(${index})">📤 派送這題</button>`;
+    questionListDiv.appendChild(qDiv);
   });
 }
 
-// 派送題目給全班學生
+// 派送題目給全班（uploadCurrentQuestion）
 function assignQuestion(index) {
-  const question = preparedQuestions[index];
+  const question = filteredQuestions[index];
   if (!question) {
-    alert('\u4e0d\u5b58\u5728\u7684\u984c\u76ee！');
+    alert('題目不存在！');
     return;
   }
 
-  // 將題目送到 Firebase （這裡介入未來連線編變）
-  console.log('\u6d3e\u9001\u984c\u76ee：', question);
-  alert(`\u5df2\u5c07\u984c${index + 1}\u6d3e\u9001\u7d66\u73ed級\uff01`);
-
-  // TODO: 將宜當的 Firebase 設定上传
+  uploadCurrentQuestion(question);
+  alert(`✅ 已將題${index + 1}派送給班級！`);
 }
 
-// 預備演示：讓小系統一開始就有模擬題
-window.onload = function() {
-  preparedQuestions = [
-    { text: '\u592a\u967d\u7cfb\u6709\u591a\u5c11\u9846\u884c\u661f？', type: 'choice' },
-    { text: '\u6c34\u662f\u5426\u662f\u56db\u72c0物\u8cea\u4e4b\u4e00？', type: 'truefalse' }
-  ];
+// 讀取 Firebase 題庫
+function loadQuestions() {
+  const questionsRef = ref(taskDatabase, '/questions');
+  onValue(questionsRef, (snapshot) => {
+    const data = snapshot.val();
+    allQuestions = [];
+
+    if (data) {
+      Object.keys(data).forEach(key => {
+        allQuestions.push({ id: key, ...data[key] });
+      });
+    }
+
+    filteredQuestions = [...allQuestions];
+    updateQuestionList();
+  });
+}
+
+// 根據篩選條件過濾題目
+function applyFilters() {
+  const selectedDate = filterDateInput.value;
+  const selectedCourseLevel = filterCourseLevelSelect.value;
+  const selectedSubject = filterSubjectSelect.value;
+
+  filteredQuestions = allQuestions.filter(q => {
+    const matchDate = selectedDate ? (q.date === selectedDate) : true;
+    const matchCourseLevel = selectedCourseLevel ? (q.courseLevel === selectedCourseLevel) : true;
+    const matchSubject = selectedSubject ? (q.subject === selectedSubject) : true;
+    return matchDate && matchCourseLevel && matchSubject;
+  });
+
   updateQuestionList();
+}
+
+// 綁定篩選按鈕
+filterBtn.addEventListener('click', applyFilters);
+
+// 頁面載入時讀取所有題目
+window.onload = function() {
+  loadQuestions();
 };
