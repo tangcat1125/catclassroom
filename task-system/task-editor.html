@@ -14,7 +14,7 @@
     <!-- 出題小精靈提示區塊 -->
     <div class="wizard-section">
       <p>🪄 這裡有出題小精靈可以幫你快速新增題目喔！</p>
-      <button onclick="window.location.href='task-editor.html'">🪄 開啟出題小精靈</button>
+      <button onclick="openWizardWindow()">🪄 開啟出題小精靈</button>
     </div>
   </header>
 
@@ -53,5 +53,52 @@
 
   <!-- 連接新版 task-editor.js -->
   <script type="module" src="../task-system/task-editor.js"></script>
+
+  <!-- 出題小精靈跳窗 -->
+  <script>
+    function openWizardWindow() {
+      // 建立跳窗
+      const wizardWindow = window.open('', '出題小精靈', 'width=600,height=400');
+
+      wizardWindow.document.write(`
+        <h1>選擇學程、科目、出題主題</h1>
+        <form id="wizardForm">
+          <label>學程：</label>
+          <select id="wizardCourseLevel">
+            <option value="國小中年級">國小中年級</option>
+            <option value="國小高年級">國小高年級</option>
+            <option value="國中">國中</option>
+            <option value="高中">高中</option>
+          </select><br><br>
+
+          <label>科目：</label>
+          <select id="wizardSubject">
+            <option value="國語">國語</option>
+            <option value="數學">數學</option>
+            <option value="自然">自然</option>
+            <option value="社會">社會</option>
+            <option value="英文">英文</option>
+          </select><br><br>
+
+          <label>出題主題：</label>
+          <input type="text" id="wizardTopic" placeholder="例如：地球、氣候變遷"><br><br>
+
+          <button type="button" onclick="generateQuestions()">生成題目</button>
+        </form>
+      `);
+    }
+
+    function generateQuestions() {
+      // 這裡會根據選擇的學程、科目、主題生成題目
+      const courseLevel = document.getElementById('wizardCourseLevel').value;
+      const subject = document.getElementById('wizardSubject').value;
+      const topic = document.getElementById('wizardTopic').value;
+
+      alert(`生成題目：學程 - ${courseLevel}, 科目 - ${subject}, 主題 - ${topic}`);
+
+      // 這裡可以接入 ChatGPT / Grok3 / Gemini API 來生成題目，然後返回顯示在原本頁面上
+    }
+  </script>
+
 </body>
 </html>
