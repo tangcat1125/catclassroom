@@ -9,12 +9,34 @@
 <body>
   <header>
     <h1>派題中心 - 白貓工作室</h1>
-    <div class="course-info">
-      課程名稱：<input type="text" id="courseName" placeholder="輸入課程名">
-      時間：<select id="courseTime">
-        <option value="40">國小一課 (40分)</option>
-        <option value="45">國高中一課 (45分)</option>
+
+    <div class="filter-section">
+      <h3>🔍 題目篩選器</h3>
+
+      <label>出題日期：</label>
+      <input type="date" id="filterDate">
+
+      <label>學程：</label>
+      <select id="filterCourseLevel">
+        <option value="">全部</option>
+        <option value="國小中年級">國小中年級</option>
+        <option value="國小高年級">國小高年級</option>
+        <option value="國中">國中</option>
+        <option value="高中">高中</option>
       </select>
+
+      <label>科目：</label>
+      <select id="filterSubject">
+        <option value="">全部</option>
+        <option value="國語">國語</option>
+        <option value="數學">數學</option>
+        <option value="自然">自然</option>
+        <option value="社會">社會</option>
+        <option value="英文">英文</option>
+        <option value="其他">其他</option>
+      </select>
+
+      <button id="filterBtn">🔎 篩選題目</button>
     </div>
   </header>
 
@@ -22,7 +44,7 @@
     <section class="question-bank">
       <h2>題字清單</h2>
       <div id="questionList">
-        <!-- 現有題目列出 -->
+        <!-- 題目列表會顯示在這 -->
       </div>
       <button id="newQuestionBtn">➕ 新增題目</button>
     </section>
@@ -32,14 +54,11 @@
       <button id="assignBtn">派送選取題目</button>
     </section>
 
-    <section class="status-section">
-      <h2>作答狀態跟蹤</h2>
-      <div id="statusBoard">
-        <!-- 顯示學生作答狀態 -->
-      </div>
-    </section>
+
   </main>
 
-  <script src="../task-system/task-manage.js"></script>
+  <!-- 連到新版 task-manage.js -->
+  <script type="module" src="../task-system/task-manage.js"></script>
+
 </body>
 </html>
