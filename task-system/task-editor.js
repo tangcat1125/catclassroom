@@ -1,4 +1,4 @@
-// bulk-editor.js - 白貓工作室 大量貼題版
+// task-editor.js - 海量貼題模式
 
 import { taskDatabase } from "./firebase-config-task.js";
 import { ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
