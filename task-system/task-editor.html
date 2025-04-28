@@ -3,31 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>新增題目 - 白貓工作室</title>
+  <title>大量貼題小精靈 - 白貓工作室</title>
   <link rel="stylesheet" href="../task-system/task-style.css">
 </head>
 <body>
   <header>
-    <h1>新增題目 - 白貓工作室</h1>
+    <h1>大量貼題小精靈 - 白貓工作室</h1>
     <button onclick="window.location.href='task-center.html'">← 返回派題中心</button>
   </header>
 
   <main>
     <section class="editor-section">
-      <h2>新增題目</h2>
+      <h2>🔹 貼上題目區</h2>
+      <small>※每一行一題，格式必須以 (○) 或 (×) 開頭，例如：(○) 水是液態物質。</small><br><br>
+      <textarea id="bulkQuestionInput" rows="15" placeholder="請大量貼上題目，每行像這樣：(○) 1+1=2"></textarea>
 
-      <label>題目類型：</label>
-      <select id="questionType">
-        <option value="truefalse">是非題</option>
-        <option value="choice">選擇題</option>
-        <option value="multichoice">複選題</option>
-        <option value="shortanswer">簡答題</option>
-        <option value="highschool">高中題</option>
-        <option value="image">圖片題</option>
-      </select>
-
-      <label>題目內容：</label>
-      <textarea id="questionText" rows="4" placeholder="請輸入題目內容..."></textarea>
+      <h2>🔹 題目設定</h2>
 
       <label>出題日期：</label>
       <input type="date" id="questionDate">
@@ -50,113 +41,11 @@
         <option value="其他">其他</option>
       </select>
 
-      <div id="choiceOptions" style="display:none;">
-        <label>選項：</label><br>
-        <input type="text" id="option1" placeholder="1選項">
-        <input type="text" id="option2" placeholder="2選項">
-        <input type="text" id="option3" placeholder="3選項">
-        <input type="text" id="option4" placeholder="4選項">
-      </div>
-
-      <div id="imageUpload" style="display:none;">
-        <label>上傳圖片：</label>
-        <input type="file" id="questionImage" disabled placeholder="尚未支援圖片上傳">
-      </div>
-
-      <label>正確答案：</label>
-
-      <!-- 單選正確答案 -->
-      <select id="correctAnswerSelect" style="display: none;"></select>
-
-      <!-- 簡答題 -->
-      <input type="text" id="correctAnswerInput" placeholder="請輸入正確答案" style="display: none;">
-
-      <!-- 複選題 -->
-      <div id="multiAnswerCheckboxes" style="display: none;">
-        <label><input type="checkbox" value="1"> 1</label>
-        <label><input type="checkbox" value="2"> 2</label>
-        <label><input type="checkbox" value="3"> 3</label>
-        <label><input type="checkbox" value="4"> 4</label>
-      </div>
-
-      <button id="saveQuestionBtn">💾 儲存題目</button>
-    </section>
-
-    <hr>
-
-    <section class="ai-helper">
-      <h2>🔍 AI輔助出題</h2>
-
-      <label>題型：</label>
-      <select id="promptType">
-        <option value="truefalse">是非題</option>
-        <option value="choice">選擇題</option>
-        <option value="multichoice">複選題</option>
-        <option value="shortanswer">簡答題</option>
-        <option value="highschool">高中題</option>
-      </select>
-
-      <label>主題：</label>
-      <input type="text" id="promptSubject" placeholder="例如：太陽系、氣候變遷">
-
-      <label>學段：</label>
-      <select id="promptLevel">
-        <option value="國小中年級">國小中年級</option>
-        <option value="國小高年級">國小高年級</option>
-        <option value="國中">國中</option>
-        <option value="高中">高中</option>
-      </select>
-
-      <label>題數：</label>
-      <select id="questionCount">
-        <option value="3">3題</option>
-        <option value="5">5題</option>
-        <option value="10">10題</option>
-      </select>
-
-      <button onclick="generatePrompt()">🎯 生成指令</button>
-
-      <textarea id="generatedPrompt" rows="4" placeholder="這裡會顯示生成的提示語..."></textarea>
-      <button onclick="copyPrompt()">📋 複製指令</button>
-
-      <p><a href="https://chat.openai.com/" target="_blank">➔ 前往 ChatGPT 練習</a></p>
+      <button id="saveBulkQuestionsBtn">💾 儲存全部題目到Firebase</button>
     </section>
   </main>
 
-  <!-- 連到新版 task-editor.js -->
-  <script type="module" src="../task-system/task-editor.js"></script>
-
-  <!-- 連到新版指令產生器 -->
-  <script>
-function generatePrompt() {
-  const type = document.getElementById('promptType').value;
-  const subject = document.getElementById('promptSubject').value;
-  const level = document.getElementById('promptLevel').value;
-  const count = document.getElementById('questionCount').value;
-
-  let prompt = '';
-
-  if (type === 'truefalse') {
-    prompt = `請用中文為${level}學生出${count}題是非題，主題是『${subject}』。每題開頭請加上( )，例如：( ) 水是液態物質嗎？請避免在句尾亂加括號或奇怪符號。每題自然清楚表達，並標示正確答案是或否。`;
-  } else if (type === 'choice') {
-    prompt = `請用中文為${level}學生出${count}題四選一的選擇題，主題是『${subject}』。每題開頭請加上( )，例如：( ) 地球是第幾顆行星？並列出1到4的選項。清楚標示正確答案是1/2/3/4其中之一。`;
-  } else if (type === 'multichoice') {
-    prompt = `請用中文為${level}學生出${count}題可多選的選擇題，主題是『${subject}』。每題開頭請加上( )，並列出1到4選項，多個正確答案可選。清楚標示所有正確選項。`;
-  } else if (type === 'shortanswer') {
-    prompt = `請用中文為${level}學生出${count}題簡答題，主題是『${subject}』。每題開頭請加上( )，自然敘述，並附上參考答案。`;
-  } else if (type === 'highschool') {
-    prompt = `請用中文為${level}學生出${count}題高中程度的選擇題，主題是『${subject}』。每題開頭加( )，列出1到4選項，標示正確答案。`;
-  }
-
-  document.getElementById('generatedPrompt').value = prompt;
-}
-
-function copyPrompt() {
-  const textarea = document.getElementById('generatedPrompt');
-  textarea.select();
-  document.execCommand('copy');
-  alert('指令已複製！');
-}
-  </script>
+  <!-- 連接新版bulk-editor.js（下一步小白寫！） -->
+  <script type="module" src="../task-system/bulk-editor.js"></script>
 </body>
 </html>
