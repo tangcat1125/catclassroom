@@ -9,11 +9,11 @@
 <body>
   <header>
     <h1>出題小精靈</h1>
-   
+    <button onclick="window.location.href='人工智慧頁面.html'">🔮 使用人工智慧</button> <!-- 連結到人工智慧頁面 -->
   </header>
 
   <main>
-    <!-- 出題小精靈提示區塊 -->
+    <!-- 出題小精靈區域 -->
     <section class="wizard-section">
       <h2>選擇學程、科目、出題主題</h2>
 
@@ -49,18 +49,82 @@
         <button type="button" onclick="generateQuestions()">生成題目</button>
       </form>
 
+      <!-- 顯示生成的指令 -->
       <div id="generatedQuestionsSection" style="display: none;">
-        <h3>生成的題目：</h3>
+        <h3>生成的指令：</h3>
         <textarea id="generatedQuestions" rows="6" readonly></textarea><br><br>
-        <button type="button" onclick="copyQuestions()">複製題目</button>
+        <button type="button" onclick="copyQuestions()">複製指令</button>
       </div>
 
-     <!-- 選擇生成工具 -->
+      <!-- 選擇生成工具 -->
       <h2>選擇生成工具：</h2>
-      <button onclick="window.location.href='https://chat.openai.com/'">使用 ChatGPT</button> <!-- 這裡是 ChatGPT 的連結 -->
-      <button onclick="window.location.href='https://grok3.com/'">使用 Grok3</button> <!-- 這裡是 Grok3 的連結 -->
-      <button onclick="window.location.href='https://gemini.com/'">使用 Gemini</button> <!-- 這裡是 Gemini 的連結 -->
+      <button onclick="useChatGPT()">使用 ChatGPT</button>
+      <button onclick="useGrok3()">使用 Grok3</button>
+      <button onclick="useGemini()">使用 Gemini</button>
     </section>
+
+    <!-- 貓腳印返回前一頁 -->
+    <footer>
+      <button onclick="window.location.href='task-center.html'">
+        <img src="cat-paw-icon.png" alt="貓腳印" width="30"> 返回前一頁
+      </button>
+    </footer>
+  </main>
+
+  <script type="module" src="../task-system/task-editor.js"></script>
+
+  <script>
+    // 生成指令的邏輯
+    function generateQuestions() {
+      const courseLevel = document.getElementById('wizardCourseLevel').value;
+      const subject = document.getElementById('wizardSubject').value;
+      const topic = document.getElementById('wizardTopic').value;
+      const questionType = document.getElementById('promptType').value; // 題型選擇
+
+      let generatedQuestions = `學程：${courseLevel}\n科目：${subject}\n主題：${topic}\n\n`;
+
+      // 根據題型生成對應的指令
+      if (questionType === 'truefalse') {
+        generatedQuestions += `(○) 是的，這是一個是非題！\n(×) 這是錯誤的描述。\n`;
+      } else if (questionType === 'choice') {
+        generatedQuestions += `(○) 這是選擇題，選項：\n1. 選項一\n2. 選項二\n3. 選項三\n4. 選項四\n`;
+      } else if (questionType === 'multichoice') {
+        generatedQuestions += `(○) 這是複選題，選擇所有正確的選項：\n1. 選項一\n2. 選項二\n3. 選項三\n`;
+      } else if (questionType === 'shortanswer') {
+        generatedQuestions += `(○) 這是簡答題，請回答問題。\n`;
+      }
+
+      // 顯示生成的題目指令
+      document.getElementById('generatedQuestions').value = generatedQuestions;
+      document.getElementById('generatedQuestionsSection').style.display = 'block';
+    }
+
+    // 複製生成的指令
+    function copyQuestions() {
+      const textarea = document.getElementById('generatedQuestions');
+      textarea.select();
+      document.execCommand('copy');
+      alert('指令已複製！');
+    }
+
+    // 使用 ChatGPT 生成題目
+    function useChatGPT() {
+      alert("你已選擇使用 ChatGPT 生成題目！");
+      // 這裡可以實際調用 ChatGPT API
+    }
+
+    // 使用 Grok3 生成題目
+    function useGrok3() {
+      alert("你已選擇使用 Grok3 生成題目！");
+      // 這裡可以實際調用 Grok3 API
+    }
+
+    // 使用 Gemini 生成題目
+    function useGemini() {
+      alert("你已選擇使用 Gemini 生成題目！");
+      // 這裡可以實際調用 Gemini API
+    }
+  </script>
 
     <!-- 海量貼題區 -->
     <section class="bulk-question-section">
