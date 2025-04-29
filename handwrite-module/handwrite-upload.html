@@ -8,8 +8,9 @@
     body {
       font-family: "Microsoft JhengHei", Arial, sans-serif;
       text-align: center;
-      padding: 30px;
       background-color: #f9f9f9;
+      padding: 20px;
+      margin: 0;
     }
     h1 {
       font-size: 24px;
@@ -19,63 +20,144 @@
       background: #fff;
       display: inline-block;
       padding: 20px;
-      border-radius: 10px;
+      border-radius: 12px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    input, button {
+    input, select, button {
       margin: 10px 0;
-      padding: 8px;
-      width: 250px;
+      padding: 10px;
+      width: 260px;
       font-size: 16px;
     }
-    img.cat-icon {
-      width: 80px;
-      vertical-align: middle;
-      margin-left: 10px;
+    canvas {
+      border: 2px solid #ccc;
+      margin-top: 20px;
+      background: #ffffff;
+      touch-action: none; /* 支援手機觸控 */
+    }
+    .tools {
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
 
-  <h1>✏️ 手寫作答上傳系統 
-    <img src="cat.png" alt="可愛貓貓" class="cat-icon">
-  </h1>
+  <h1>✏️ 手寫作答上傳系統</h1>
 
   <form id="handwriteForm">
+    <select id="classType">
+      <option value="本班">本班</option>
+      <option value="訪客">訪客</option>
+    </select><br>
+
     <input type="text" id="studentId" placeholder="請輸入學生ID" required><br>
+    <input type="text" id="studentName" placeholder="請輸入姓名" required><br>
+    <div id="visitorFields" style="display:none;">
+      <input type="text" id="visitorContact" placeholder="訪客聯絡方式 (選填)"><br>
+    </div>
     <input type="text" id="questionId" placeholder="請輸入題目ID" required><br>
     <input type="number" id="releaseTimestamp" placeholder="題目發布時間 (毫秒)" required><br>
-    <input type="file" id="handwriteImage" accept="image/*" required><br>
-    <button type="submit">📤 上傳手寫作答</button>
+
+    <input type="file" id="handwriteImage" accept="image/*"><br>
+
+    <canvas id="handwriteCanvas" width="300" height="300"></canvas><br>
+
+    <div class="tools">
+      <button type="button" onclick="clearCanvas()">🧹 清除畫布</button>
+    </div>
+
+    <button type="submit">📤 上傳作答</button>
   </form>
 
   <script type="module">
-    import { uploadHandwrite } from "./handwrite-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+      authDomain: "catclassroom-login.firebaseapp.com",
+      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "catclassroom-login",
+      storageBucket: "catclassroom-login.appspot.com",
+      messagingSenderId: "123487233181",
+      appId: "1:123487233181:web:aecc2891dc2d1096962074",
+      measurementId: "G-6C92GYSX3F"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const canvas = document.getElementById('handwriteCanvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function startDraw(e) {
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000';
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+    }
+
+    function endDraw() {
+      drawing = false;
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseout', endDraw);
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    document.getElementById("classType").addEventListener("change", (e) => {
+      document.getElementById("visitorFields").style.display = e.target.value === "訪客" ? "block" : "none";
+    });
 
     document.getElementById("handwriteForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      const classType = document.getElementById("classType").value;
       const studentId = document.getElementById("studentId").value.trim();
+      const studentName = document.getElementById("studentName").value.trim();
+      const visitorContact = document.getElementById("visitorContact").value.trim();
       const questionId = document.getElementById("questionId").value.trim();
       const releaseTimestamp = Number(document.getElementById("releaseTimestamp").value);
-      const fileInput = document.getElementById("handwriteImage");
-      const file = fileInput.files[0];
+      const now = Date.now();
 
-      if (!file) {
-        alert("請選擇要上傳的圖片！");
+      if (now - releaseTimestamp > 5 * 60 * 1000) {
+        alert("⏰ 作答時間已過，無法上傳");
         return;
       }
 
-      // 暫時使用假的圖片網址示範（後面會串 Firebase Storage）
-      const fakeImageUrl = "https://example.com/uploads/" + encodeURIComponent(file.name);
+      // 把 canvas 轉成圖片 base64
+      const canvasImageUrl = canvas.toDataURL("image/png");
+
+      const data = {
+        classType,
+        studentId,
+        studentName,
+        visitorContact: classType === "訪客" ? visitorContact : "",
+        questionId,
+        imageUrl: canvasImageUrl,
+        fromCanvas: true,
+        timestamp: now
+      };
 
       try {
-        await uploadHandwrite(studentId, questionId, fakeImageUrl, releaseTimestamp);
-        alert("✅ 上傳成功！即將返回任務中心...");
-        window.location.href = "../task-system/taskcenter.html"; // 跳回任務中心
+        await set(ref(db, `handwriting/${studentId}/${questionId}`), data);
+        alert("✅ 上傳成功！");
       } catch (error) {
-        console.error("❌ 上傳失敗：", error);
-        alert("❌ 上傳失敗，請重新嘗試！");
+        alert("❌ 上傳失敗：" + error.message);
       }
     });
   </script>
