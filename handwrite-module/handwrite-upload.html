@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>手寫作答上傳 - 白貓工作室</title>
+  <title>智慧手寫作答系統 - 白貓工作室</title>
   <style>
     body {
       font-family: "Microsoft JhengHei", Arial, sans-serif;
@@ -16,62 +16,57 @@
       font-size: 24px;
       margin-bottom: 20px;
     }
-    form {
-      background: #fff;
-      display: inline-block;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    input, select, button {
-      margin: 10px 0;
-      padding: 10px;
-      width: 260px;
-      font-size: 16px;
+    #info {
+      margin-bottom: 20px;
+      font-size: 18px;
+      color: #333;
     }
     canvas {
       border: 2px solid #ccc;
-      margin-top: 20px;
-      background: #ffffff;
-      touch-action: none; /* 支援手機觸控 */
-    }
-    .tools {
       margin-top: 10px;
+      background: #ffffff;
+      touch-action: none;
+    }
+    .tools, .submit-btn {
+      margin-top: 15px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background-color: #ffa726;
+      color: white;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #fb8c00;
     }
   </style>
 </head>
 <body>
 
-  <h1>✏️ 手寫作答上傳系統</h1>
+  <h1>✏️ 智慧手寫作答系統</h1>
 
-  <form id="handwriteForm">
-    <select id="classType">
-      <option value="本班">本班</option>
-      <option value="訪客">訪客</option>
-    </select><br>
+  <div id="info">
+    <div id="studentInfo"></div>
+    <div id="questionInfo"></div>
+  </div>
 
-    <input type="text" id="studentId" placeholder="請輸入學生ID" required><br>
-    <input type="text" id="studentName" placeholder="請輸入姓名" required><br>
-    <div id="visitorFields" style="display:none;">
-      <input type="text" id="visitorContact" placeholder="訪客聯絡方式 (選填)"><br>
-    </div>
-    <input type="text" id="questionId" placeholder="請輸入題目ID" required><br>
-    <input type="number" id="releaseTimestamp" placeholder="題目發布時間 (毫秒)" required><br>
+  <canvas id="handwriteCanvas" width="300" height="300"></canvas>
 
-    <input type="file" id="handwriteImage" accept="image/*"><br>
+  <div class="tools">
+    <button type="button" onclick="clearCanvas()">🧹 清除畫布</button>
+  </div>
 
-    <canvas id="handwriteCanvas" width="300" height="300"></canvas><br>
-
-    <div class="tools">
-      <button type="button" onclick="clearCanvas()">🧹 清除畫布</button>
-    </div>
-
-    <button type="submit">📤 上傳作答</button>
-  </form>
+  <div class="submit-btn">
+    <button type="button" onclick="uploadHandwrite()">📤 上傳作答</button>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
@@ -87,6 +82,42 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    const studentId = sessionStorage.getItem("studentId");
+    let studentName = "";
+    let studentClass = "";
+    let questionId = "";
+    let releaseTimestamp = 0;
+
+    const studentInfoDiv = document.getElementById("studentInfo");
+    const questionInfoDiv = document.getElementById("questionInfo");
+
+    // 抓學生資料
+    if (studentId) {
+      const loginRef = ref(db, `login/${studentId}`);
+      get(loginRef).then(snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          studentName = data.StudentName || "";
+          studentClass = data.StudentClass || "";
+          studentInfoDiv.textContent = `👤 ${studentClass} ${studentName}`;
+        }
+      });
+    }
+
+    // 抓題目資料
+    const questionRef = ref(db, `teacher/question`);
+    get(questionRef).then(snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        questionId = data.id || "";
+        releaseTimestamp = data.timestamp || 0;
+        if (questionId) {
+          questionInfoDiv.textContent = `✏️ 題目：${questionId}`;
+        }
+      }
+    });
+
+    // 畫布設定
     const canvas = document.getElementById('handwriteCanvas');
     const ctx = canvas.getContext('2d');
     let drawing = false;
@@ -115,51 +146,43 @@
     canvas.addEventListener('mouseup', endDraw);
     canvas.addEventListener('mouseout', endDraw);
 
-    function clearCanvas() {
+    window.clearCanvas = function () {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    document.getElementById("classType").addEventListener("change", (e) => {
-      document.getElementById("visitorFields").style.display = e.target.value === "訪客" ? "block" : "none";
-    });
+    // 上傳作答
+    window.uploadHandwrite = async function () {
+      if (!studentId || !questionId) {
+        alert("❌ 資料不足，無法上傳");
+        return;
+      }
 
-    document.getElementById("handwriteForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const classType = document.getElementById("classType").value;
-      const studentId = document.getElementById("studentId").value.trim();
-      const studentName = document.getElementById("studentName").value.trim();
-      const visitorContact = document.getElementById("visitorContact").value.trim();
-      const questionId = document.getElementById("questionId").value.trim();
-      const releaseTimestamp = Number(document.getElementById("releaseTimestamp").value);
       const now = Date.now();
-
-      if (now - releaseTimestamp > 5 * 60 * 1000) {
+      if (releaseTimestamp && now - releaseTimestamp > 5 * 60 * 1000) {
         alert("⏰ 作答時間已過，無法上傳");
         return;
       }
 
-      // 把 canvas 轉成圖片 base64
-      const canvasImageUrl = canvas.toDataURL("image/png");
+      const imageUrl = canvas.toDataURL("image/png");
 
       const data = {
-        classType,
         studentId,
         studentName,
-        visitorContact: classType === "訪客" ? visitorContact : "",
+        studentClass,
         questionId,
-        imageUrl: canvasImageUrl,
+        imageUrl,
         fromCanvas: true,
         timestamp: now
       };
 
       try {
         await set(ref(db, `handwriting/${studentId}/${questionId}`), data);
-        alert("✅ 上傳成功！");
+        alert("✅ 作答上傳成功！");
       } catch (error) {
         alert("❌ 上傳失敗：" + error.message);
       }
-    });
+    }
+
   </script>
 
 </body>
