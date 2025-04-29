@@ -66,6 +66,18 @@
       max-width: 150px;
       border: 1px solid #aaa;
     }
+    #catDecoration {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      width: 80px;
+      opacity: 0.9;
+      z-index: 1000;
+      transition: transform 0.3s;
+    }
+    #catDecoration:hover {
+      transform: scale(1.1);
+    }
   </style>
 </head>
 <body>
@@ -106,6 +118,11 @@
 
   <div id="uploadStatus"></div>
   <img id="previewImage" style="display:none;" />
+
+  <!-- 返回按鈕：貓咪點擊返回 rollcall.html -->
+  <a href="../rollcall.html">
+    <img src="./cat.png" id="catDecoration" alt="回到登入頁">
+  </a>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
