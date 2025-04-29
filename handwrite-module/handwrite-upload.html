@@ -61,6 +61,11 @@
       font-size: 18px;
       color: #28a745;
     }
+    #previewImage {
+      margin-top: 15px;
+      max-width: 150px;
+      border: 1px solid #aaa;
+    }
   </style>
 </head>
 <body>
@@ -100,6 +105,7 @@
   </div>
 
   <div id="uploadStatus"></div>
+  <img id="previewImage" style="display:none;" />
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
@@ -130,6 +136,7 @@
     const questionContentDiv = document.getElementById("questionContent");
     const questionBlockDiv = document.getElementById("questionBlock");
     const uploadStatusDiv = document.getElementById("uploadStatus");
+    const previewImage = document.getElementById("previewImage");
 
     // 抓學生資料
     const loginRef = ref(db, `login/${studentId}`);
@@ -192,6 +199,7 @@
 
     window.clearCanvas = function () {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      previewImage.style.display = "none";
     }
 
     // 上傳作答
@@ -224,7 +232,9 @@
       try {
         await set(ref(db, `handwriting/${studentId}/${questionId}`), data);
         uploadStatusDiv.style.color = "#28a745";
-        uploadStatusDiv.textContent = "✅ 作答上傳成功！";
+        uploadStatusDiv.textContent = "✅ 作答上傳成功！以下是你的畫作預覽：";
+        previewImage.src = imageUrl;
+        previewImage.style.display = "block";
       } catch (error) {
         uploadStatusDiv.style.color = "#dc3545";
         uploadStatusDiv.textContent = "❌ 上傳失敗，請再試一次！";
