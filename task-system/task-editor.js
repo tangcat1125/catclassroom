@@ -1,4 +1,4 @@
-// task-editor.js - 海量貼題模式
+// task-editor.js - 海量貼題模式（全題型版）
 
 import { taskDatabase } from "./firebase-config-task.js";
 import { ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
@@ -40,22 +40,43 @@ function saveBulkQuestions() {
 
   lines.forEach(line => {
     line = line.trim();
-
-    if (!line.startsWith('(○)') && !line.startsWith('(×)')) {
+    if (!line.startsWith('(') || line.indexOf(')') === -1) {
       errorLines.push(line);
       return;
     }
 
-    const answer = line.startsWith('(○)') ? '是' : '否';
-    const text = line.slice(3).trim(); // 把 (○) 或 (×) 切掉，只留下題目文字
+    const firstBracket = line.indexOf(')');
+    const marker = line.substring(1, firstBracket);
+    const text = line.slice(firstBracket + 1).trim();
 
-    if (!text) {
+    if (!marker || !text) {
       errorLines.push(line);
       return;
+    }
+
+    let type = "";
+    let answer = "";
+
+    // 判斷題型
+    if (marker === "○" || marker === "×") {
+      type = "truefalse";
+      answer = (marker === "○") ? "是" : "否";
+    } else if (/^[A-E]$/.test(marker)) {
+      type = "choice";
+      answer = marker;
+    } else if (/^[A-E](,[A-E])+$/i.test(marker)) {
+      type = "multichoice";
+      answer = marker.split(',').map(x => x.trim());
+    } else if (/^\d+$/.test(marker)) {
+      type = "calculation";
+      answer = Number(marker);
+    } else {
+      type = "shortanswer";
+      answer = marker;
     }
 
     const questionData = {
-      type: "truefalse", // 這個版本大量貼上，預設是是非題
+      type,
       text,
       date,
       courseLevel,
@@ -80,7 +101,7 @@ function saveBulkQuestions() {
     }
     if (errorLines.length > 0) {
       console.warn('這些行有問題沒有成功儲存：', errorLines);
-      alert(`⚠️ 有 ${errorLines.length} 行無法解析，請查看控制台(console)！`);
+      alert(`⚠️ 有 ${errorLines.length} 行格式錯誤，請檢查！`);
     }
     bulkQuestionInput.value = ''; // 清空輸入框
   }, 1000); // 稍微延遲讓Firebase寫入完成
