@@ -16,10 +16,19 @@
       font-size: 24px;
       margin-bottom: 20px;
     }
-    #info {
+    #info, #questionBlock {
       margin-bottom: 20px;
       font-size: 18px;
       color: #333;
+    }
+    #questionContent {
+      margin: 10px auto;
+      padding: 10px;
+      max-width: 500px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      background-color: #ffffff;
+      white-space: pre-wrap;
     }
     canvas {
       border: 2px solid #ccc;
@@ -51,7 +60,11 @@
 
   <div id="info">
     <div id="studentInfo"></div>
+  </div>
+
+  <div id="questionBlock" style="display:none;">
     <div id="questionInfo"></div>
+    <div id="questionContent"></div>
   </div>
 
   <canvas id="handwriteCanvas" width="300" height="300"></canvas>
@@ -82,7 +95,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const studentId = sessionStorage.getItem("studentId");
+    const studentId = sessionStorage.getItem("studentId") || "test";
     let studentName = "";
     let studentClass = "";
     let questionId = "";
@@ -90,19 +103,19 @@
 
     const studentInfoDiv = document.getElementById("studentInfo");
     const questionInfoDiv = document.getElementById("questionInfo");
+    const questionContentDiv = document.getElementById("questionContent");
+    const questionBlockDiv = document.getElementById("questionBlock");
 
     // 抓學生資料
-    if (studentId) {
-      const loginRef = ref(db, `login/${studentId}`);
-      get(loginRef).then(snapshot => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          studentName = data.StudentName || "";
-          studentClass = data.StudentClass || "";
-          studentInfoDiv.textContent = `👤 ${studentClass} ${studentName}`;
-        }
-      });
-    }
+    const loginRef = ref(db, `login/${studentId}`);
+    get(loginRef).then(snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        studentName = data.StudentName || "";
+        studentClass = data.StudentClass || "";
+        studentInfoDiv.textContent = `👤 ${studentClass} ${studentName}`;
+      }
+    });
 
     // 抓題目資料
     const questionRef = ref(db, `teacher/question`);
@@ -111,8 +124,14 @@
         const data = snapshot.val();
         questionId = data.id || "";
         releaseTimestamp = data.timestamp || 0;
+        const questionText = data.content || "";
+
         if (questionId) {
           questionInfoDiv.textContent = `✏️ 題目：${questionId}`;
+        }
+        if (questionText) {
+          questionContentDiv.textContent = questionText;
+          questionBlockDiv.style.display = "block";
         }
       }
     });
