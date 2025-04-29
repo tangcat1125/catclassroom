@@ -30,6 +30,9 @@
       background-color: #ffffff;
       white-space: pre-wrap;
     }
+    #controls {
+      margin-bottom: 10px;
+    }
     canvas {
       border: 2px solid #ccc;
       margin-top: 10px;
@@ -39,7 +42,7 @@
     .tools, .submit-btn {
       margin-top: 15px;
     }
-    button {
+    button, select {
       padding: 10px 20px;
       font-size: 16px;
       border-radius: 8px;
@@ -48,9 +51,15 @@
       background-color: #ffa726;
       color: white;
       transition: background-color 0.3s;
+      margin: 5px;
     }
     button:hover {
       background-color: #fb8c00;
+    }
+    #uploadStatus {
+      margin-top: 15px;
+      font-size: 18px;
+      color: #28a745;
     }
   </style>
 </head>
@@ -67,6 +76,19 @@
     <div id="questionContent"></div>
   </div>
 
+  <div id="controls">
+    <select id="colorPicker">
+      <option value="#000000">黑色</option>
+      <option value="#ff0000">紅色</option>
+      <option value="#0000ff">藍色</option>
+    </select>
+    <select id="lineWidthPicker">
+      <option value="2">細線</option>
+      <option value="5">中線</option>
+      <option value="8">粗線</option>
+    </select>
+  </div>
+
   <canvas id="handwriteCanvas" width="300" height="300"></canvas>
 
   <div class="tools">
@@ -76,6 +98,8 @@
   <div class="submit-btn">
     <button type="button" onclick="uploadHandwrite()">📤 上傳作答</button>
   </div>
+
+  <div id="uploadStatus"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
@@ -105,6 +129,7 @@
     const questionInfoDiv = document.getElementById("questionInfo");
     const questionContentDiv = document.getElementById("questionContent");
     const questionBlockDiv = document.getElementById("questionBlock");
+    const uploadStatusDiv = document.getElementById("uploadStatus");
 
     // 抓學生資料
     const loginRef = ref(db, `login/${studentId}`);
@@ -149,9 +174,9 @@
 
     function draw(e) {
       if (!drawing) return;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = document.getElementById('lineWidthPicker').value;
       ctx.lineCap = 'round';
-      ctx.strokeStyle = '#000';
+      ctx.strokeStyle = document.getElementById('colorPicker').value;
       ctx.lineTo(e.offsetX, e.offsetY);
       ctx.stroke();
     }
@@ -183,6 +208,8 @@
       }
 
       const imageUrl = canvas.toDataURL("image/png");
+      uploadStatusDiv.style.color = "#007bff";
+      uploadStatusDiv.textContent = "📤 上傳中...請稍候";
 
       const data = {
         studentId,
@@ -196,9 +223,11 @@
 
       try {
         await set(ref(db, `handwriting/${studentId}/${questionId}`), data);
-        alert("✅ 作答上傳成功！");
+        uploadStatusDiv.style.color = "#28a745";
+        uploadStatusDiv.textContent = "✅ 作答上傳成功！";
       } catch (error) {
-        alert("❌ 上傳失敗：" + error.message);
+        uploadStatusDiv.style.color = "#dc3545";
+        uploadStatusDiv.textContent = "❌ 上傳失敗，請再試一次！";
       }
     }
 
