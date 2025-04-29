@@ -132,17 +132,26 @@
           <option value="英文">英文</option>
         </select><br>
 
-        <label for="wizardTopic">出題主題：</label>
-        <input type="text" id="wizardTopic" placeholder="例如：臺灣的地形、分數的加減、光合作用"><br>
+<label for="wizardTopic">出題主題：</label>
+<input type="text" id="wizardTopic" placeholder="例如：臺灣的地形、分數的加減、光合作用"><br>
 
-        <label for="promptType">選擇題型：</label>
-        <select id="promptType">
-          <option value="truefalse">是非題</option>
-          <option value="choice">選擇題</option>
-          <option value="multichoice">複選題</option>
-          <option value="shortanswer">簡答題</option>
-          <option value="calculation">計算題</option>
-        </select><br>
+<label for="questionCategory">題目分類：</label>  <!-- ← 這是新加的 -->
+<select id="questionCategory">
+  <option value="normal">一般題目</option>
+  <option value="application">應用題</option>
+  <option value="calculation">計算題</option>
+  <option value="reading">閱讀測驗</option>
+</select><br>
+
+<label for="promptType">選擇題型：</label>
+<select id="promptType">
+  <option value="truefalse">是非題</option>
+  <option value="choice">選擇題</option>
+  <option value="multichoice">複選題</option>
+  <option value="shortanswer">簡答題</option>
+  <option value="calculation">計算題</option>
+</select><br>
+
 
         <label for="numQuestions">生成題數：</label>
         <select id="numQuestions">
