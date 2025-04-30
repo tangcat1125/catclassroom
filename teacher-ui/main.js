@@ -1,4 +1,4 @@
-// main.js：白貓教師端互動邏輯（亮紅燈 blingbling 最終版）
+// main.js：白貓教師端互動邏輯（guest 修正版）
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
@@ -59,32 +59,30 @@ function flashUnknownStudent(id) {
   }, 1200);
 }
 
-// 🔥 監聽 Firebase 深層 handwriting/{studentId}/{questionId}
-onChildAdded(ref(db, "handwriting"), (studentSnap) => {
-  const studentId = studentSnap.key;
-  const studentRef = ref(db, `handwriting/${studentId}`);
+// ✅ 正確監聽 handwriting/guest 下的所有作答（自由繪圖）
+const guestRef = ref(db, "handwriting/guest");
 
-  onChildAdded(studentRef, (answerSnap) => {
-    const data = answerSnap.val();
-    const questionId = answerSnap.key;
+onChildAdded(guestRef, (answerSnap) => {
+  const questionId = answerSnap.key;
+  const data = answerSnap.val();
+  const studentId = "guest";
 
-    const known = Array.from(document.querySelectorAll(".student-row"))
-      .some(row => row.textContent.trim() === studentId);
+  const known = Array.from(document.querySelectorAll(".student-row"))
+    .some(row => row.textContent.trim() === studentId);
 
-    if (!known) {
-      const list = document.querySelector(".student-status-list");
-      const row = document.createElement("div");
-      row.className = "student-row";
-      row.innerHTML = `<span class="red"></span> ${studentId}（陌生）`;
-      list.appendChild(row);
+  if (!known) {
+    const list = document.querySelector(".student-status-list");
+    const row = document.createElement("div");
+    row.className = "student-row";
+    row.innerHTML = `<span class="red"></span> ${studentId}（陌生）`;
+    list.appendChild(row);
 
-      const board = document.querySelector(".response-board");
-      const alertBox = document.createElement("div");
-      alertBox.className = "response-box red";
-      alertBox.innerText = `⚠️ 陌生學生 ${studentId}：手寫圖作答於「${questionId}」`;
-      board.appendChild(alertBox);
+    const board = document.querySelector(".response-board");
+    const alertBox = document.createElement("div");
+    alertBox.className = "response-box red";
+    alertBox.innerText = `⚠️ 陌生學生 ${studentId}：手寫圖作答於「${questionId}」`;
+    board.appendChild(alertBox);
 
-      flashUnknownStudent(studentId);
-    }
-  });
+    flashUnknownStudent(studentId);
+  }
 });
