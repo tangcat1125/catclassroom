@@ -1,7 +1,7 @@
-// main.js：白貓教師端互動邏輯（guest 修正版）
+// main.js：教師端截圖功能＋broadcast 廣播支援
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+import { getDatabase, ref, onChildAdded, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
@@ -30,7 +30,20 @@ function showQuestionPanel() {
 }
 
 function takeScreenshot() {
-  alert("📸 此處可加入 html2canvas 擷圖功能或手動截圖");
+  import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js').then(({ default: html2canvas }) => {
+    html2canvas(document.body).then(canvas => {
+      const imageData = canvas.toDataURL("image/png");
+      const screenshotRef = ref(db, "broadcast/screenshot");
+      set(screenshotRef, {
+        url: imageData,
+        timestamp: Date.now()
+      }).then(() => {
+        alert("📸 截圖已成功上傳給學生！");
+      }).catch(err => {
+        alert("❌ 截圖上傳失敗：「" + err.message + "」");
+      });
+    });
+  });
 }
 
 function addStudentResponse(id, text, color = "green") {
