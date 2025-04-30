@@ -1,16 +1,17 @@
-// main.js：白貓工作室 教師端互動邏輯（深層監聽陌生手寫作答）
+// main.js：白貓教師端互動邏輯（亮紅燈 blingbling 最終版）
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "你的_API_KEY",
-  authDomain: "你的_project.firebaseapp.com",
-  databaseURL: "https://你的_project.firebaseio.com",
-  projectId: "你的_projectId",
-  storageBucket: "你的_project.appspot.com",
-  messagingSenderId: "xxxxxxxxxx",
-  appId: "1:xxxxxxxxxx:web:xxxxxxxxxx"
+  apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+  authDomain: "catclassroom-login.firebaseapp.com",
+  databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "catclassroom-login",
+  storageBucket: "catclassroom-login.firebasestorage.app",
+  messagingSenderId: "123487233181",
+  appId: "1:123487233181:web:aecc2891dc2d1096962074",
+  measurementId: "G-6C92GYSX3F"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -25,11 +26,11 @@ function copyLink() {
 }
 
 function showQuestionPanel() {
-  alert("👉 請到後續版本加入『題目輸入區』功能 😸");
+  alert("👉 後續版本將整合題目派送功能");
 }
 
 function takeScreenshot() {
-  alert("📸 此處將整合 html2canvas 或下載功能（建議手動擷圖）");
+  alert("📸 此處可加入 html2canvas 擷圖功能或手動截圖");
 }
 
 function addStudentResponse(id, text, color = "green") {
@@ -47,9 +48,7 @@ function addStudentResponse(id, text, color = "green") {
   box.innerText = `${displayName}: ${text}`;
   board.appendChild(box);
 
-  if (!isKnown) {
-    flashUnknownStudent(id);
-  }
+  if (!isKnown) flashUnknownStudent(id);
 }
 
 function flashUnknownStudent(id) {
@@ -60,7 +59,7 @@ function flashUnknownStudent(id) {
   }, 1200);
 }
 
-// ✅ 深層監聽 handwriting/studentId/questionId 結構
+// 🔥 監聽 Firebase 深層 handwriting/{studentId}/{questionId}
 onChildAdded(ref(db, "handwriting"), (studentSnap) => {
   const studentId = studentSnap.key;
   const studentRef = ref(db, `handwriting/${studentId}`);
@@ -82,8 +81,7 @@ onChildAdded(ref(db, "handwriting"), (studentSnap) => {
       const board = document.querySelector(".response-board");
       const alertBox = document.createElement("div");
       alertBox.className = "response-box red";
-      const summary = data && data.imageUrl ? `手寫作答於「${questionId}」` : "提交資料";
-      alertBox.innerText = `⚠️ 陌生學生 ${studentId}：${summary}`;
+      alertBox.innerText = `⚠️ 陌生學生 ${studentId}：手寫圖作答於「${questionId}」`;
       board.appendChild(alertBox);
 
       flashUnknownStudent(studentId);
