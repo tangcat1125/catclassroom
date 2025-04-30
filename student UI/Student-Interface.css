@@ -1,8 +1,9 @@
-/* 🌈 學生作答介面 - 白貓工作室 粉藍清爽風格 */
+/* === 白貓工作室 - 學生作答 UI 最終版 === */
 
+/* 🌈 基本背景與排版 */
 body {
   font-family: "Microsoft JhengHei", sans-serif;
-  background-color: #e3f2fd; /* 粉藍背景 */
+  background-color: #e3f2fd; /* 粉藍 */
   margin: 0;
   padding: 20px;
   color: #333;
@@ -30,7 +31,7 @@ body {
   margin-top: 8px;
 }
 
-/* 🔴 紅燈提示（出題時亮） */
+/* 🔴 紅燈提示（出題時閃爍） */
 .light.red {
   width: 18px;
   height: 18px;
@@ -53,7 +54,7 @@ body {
   100% { opacity: 1; }
 }
 
-/* 📣 訊息板區 */
+/* 📣 訊息板區（包含系統訊息 + 血條 + 回應列表） */
 .message-board {
   background-color: #ffffff;
   border: 2px solid #bbdefb;
@@ -87,7 +88,7 @@ body {
 
 .progress-fill {
   height: 100%;
-  background-color: #66bb6a; /* 綠色完成 */
+  background-color: #66bb6a;
   text-align: center;
   color: white;
   font-weight: bold;
@@ -95,7 +96,7 @@ body {
   transition: width 0.5s ease;
 }
 
-/* 👥 回應訊息區 */
+/* 👥 學生回答列表 */
 #messageList {
   font-size: 15px;
   color: #333;
@@ -110,7 +111,7 @@ body {
   border-radius: 6px;
 }
 
-/* 📝 作答區 */
+/* 📝 作答區（按鈕式） */
 .answer-panel {
   background-color: #ffffff;
   border-radius: 12px;
@@ -135,7 +136,6 @@ body {
   flex-wrap: wrap;
 }
 
-/* ✅ 答題按鈕 */
 button.send-btn {
   padding: 12px 20px;
   font-size: 16px;
@@ -149,4 +149,41 @@ button.send-btn {
 
 button.send-btn:hover {
   background-color: #1976d2;
+}
+
+/* 🆘 求救系統 */
+.help-box {
+  background-color: #ffffff;
+  border: 2px solid #ffcdd2;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 40px;
+  box-shadow: 0 2px 6px rgba(255, 82, 82, 0.1);
+}
+
+textarea#helpText {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-top: 10px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+/* 🔔 閃爍提示文字 */
+.flash-text {
+  animation: flash 1s infinite alternate;
+  color: #d32f2f;
+  font-weight: bold;
+  font-size: 16px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+@keyframes flash {
+  0% { opacity: 1; }
+  100% { opacity: 0.4; }
 }
