@@ -1,3 +1,4 @@
+<!-- ✅ 已修正聊天室功能 StudentUi_Login.html -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
   <head>
@@ -55,6 +56,11 @@
       <div class="chat-box">
         <h3>🗨️ 課程聊天室（只讀）</h3>
         <div id="chatList"></div>
+        <!-- ✅ 拼圖 A：聊天室輸入功能 -->
+        <div class="help-box">
+          <textarea id="chatInput" placeholder="輸入聊天室訊息..." rows="2" style="width: 100%; padding: 10px;"></textarea>
+          <button onclick="sendChatMessage()" class="send-btn" style="margin-top: 10px;">送出聊天室訊息</button>
+        </div>
       </div>
 
       <div class="help-box" style="margin-top: 30px;">
