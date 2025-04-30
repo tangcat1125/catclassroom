@@ -3,20 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>白貓工作室 | 教師介面</title>
-  <link rel="stylesheet" href="style.css">
+  <title>白貓工作室 | 教師端互動介面</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
     <div class="left">
       <h2>STUDENT QUESTION</h2>
       <button onclick="takeScreenshot()">Take Screenshot</button>
-      <br><br>
-      <!-- QR 圖示可由 Firebase 或其它動態產生，暫時用 alt 文字 -->
-      <img src="assets/qr-placeholder.png" alt="QR Code" onerror="this.alt='[QR 代碼]'" width="100">
-      <br>
-      <input type="text" id="login-link" value="https://tangcat1125.github.io/catclassroom/student-ui/rollcall.html">
-      <br>
+      <br /><br />
+      <img src="assets/qr-placeholder.png" alt="[QR Code]" onerror="this.alt='[QR 圖示]'" width="100" />
+      <br />
+      <input type="text" id="login-link" value="https://tangcat1125.github.io/catclassroom/student-ui/rollcall.html" />
+      <br />
       <button onclick="copyLink()">LNK</button>
       <button onclick="showQuestionPanel()">ASK</button>
       <div class="student-status-list">
@@ -30,12 +29,11 @@
     </div>
     <div class="right">
       <div class="response-board">
-        <!-- 學生回答將動態插入這裡 -->
+        <!-- 學生回答訊息將顯示於此 -->
       </div>
     </div>
   </div>
 
-  <!-- 使用 ES6 module 正確引入 JS -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
