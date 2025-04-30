@@ -1,3 +1,4 @@
+<!-- ✅ 修正檔案：StudentUi_Login.html（聊天室今日訊息區塊） -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -8,7 +9,6 @@
 </head>
 <body>
   <div class="student-ui">
-    <!-- 🧾 標頭 -->
     <div class="header">
       <h2>學生作答區</h2>
       <div class="student-info">
@@ -18,7 +18,6 @@
       </div>
     </div>
 
-    <!-- 📣 訊息板 -->
     <div class="message-board">
       <h3>📢 系統訊息</h3>
       <div id="systemMessage">等待老師出題中...</div>
@@ -28,14 +27,12 @@
       <div id="messageList"></div>
     </div>
 
-    <!-- ✅ 答題區 -->
     <div class="answer-panel" id="answerPanel" style="display: none;">
       <h3>請作答：</h3>
       <div id="questionText"></div>
       <div id="answerButtons"></div>
     </div>
 
-    <!-- 🆘 求救區 -->
     <div class="help-box">
       <button id="help-button" class="send-btn">🆘 我要求救</button>
       <div id="helpForm" style="display: none; margin-top: 10px;">
@@ -45,13 +42,12 @@
       </div>
     </div>
 
-    <!-- 📡 課程聊天室（改為只讀） -->
+    <!-- 🗓️ 當日區塊聊天室 -->
     <div class="chat-box">
       <h3>🗨️ 課程聊天室（只讀）</h3>
       <div id="chatList"></div>
     </div>
 
-    <!-- 💬 公開留言區 -->
     <div class="help-box" style="margin-top: 30px;">
       <h3>💬 留言牆（大家都看得到喔）</h3>
       <textarea id="publicMessage" placeholder="輸入你想說的話..." rows="3" style="width: 100%; padding: 10px;"></textarea>
