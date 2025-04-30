@@ -153,7 +153,7 @@ button.send-btn:hover {
   box-shadow: 0 2px 6px rgba(255, 82, 82, 0.1);
 }
 
-textarea#helpText, textarea#publicMessage, textarea#chatInput {
+textarea#helpText, textarea#chatInput {
   width: 100%;
   min-height: 80px;
   padding: 10px;
@@ -177,21 +177,6 @@ textarea#helpText, textarea#publicMessage, textarea#chatInput {
 @keyframes flash {
   0% { opacity: 1; }
   100% { opacity: 0.4; }
-}
-
-.message-bubble {
-  background-color: #fff8e1;
-  border-left: 4px solid #fbc02d;
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin-top: 8px;
-  font-size: 15px;
-}
-
-.message-bubble .meta {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
 }
 
 .chat-box {
@@ -218,7 +203,6 @@ textarea#helpText, textarea#publicMessage, textarea#chatInput {
   border-radius: 8px;
 }
 
-/* ✅ 新增聊天室樣式 */
 .chat-area {
   max-height: 180px;
   overflow-y: auto;
