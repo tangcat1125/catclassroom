@@ -1,9 +1,10 @@
+<!-- ✅ 修正檔案：rollcall.html（登入頁 UI 調整） -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>學生登入 - 白貓工作室</title>
+  <title>學生登入 - 白貓教室</title>
   <style>
     body {
       font-family: "Microsoft JhengHei", sans-serif;
@@ -11,7 +12,6 @@
       margin: 0;
       padding: 0;
     }
-
     .container {
       max-width: 420px;
       margin: 80px auto;
@@ -20,20 +20,17 @@
       padding: 32px 24px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
     }
-
     h2 {
       text-align: center;
       color: #0d47a1;
       margin-bottom: 24px;
     }
-
     label {
       display: block;
       font-size: 16px;
       margin-top: 16px;
       color: #333;
     }
-
     input, select {
       width: 100%;
       padding: 12px;
@@ -43,7 +40,6 @@
       border-radius: 8px;
       box-sizing: border-box;
     }
-
     button {
       width: 100%;
       margin-top: 28px;
@@ -55,19 +51,15 @@
       border-radius: 8px;
       cursor: pointer;
     }
-
     button:hover {
       background-color: #1976d2;
     }
-
     .note {
       text-align: center;
       margin-top: 16px;
       font-size: 15px;
       color: green;
     }
-
-    /* 🐱 右下角貓圖 */
     .corner-cat {
       position: fixed;
       bottom: 8px;
@@ -78,10 +70,8 @@
   </style>
 </head>
 <body>
-
   <div class="container">
     <h2>學生登入</h2>
-
     <label for="mode">我是...</label>
     <select id="mode" onchange="toggleMode()">
       <option value="self">本班學生</option>
@@ -100,13 +90,10 @@
     <div id="result" class="note"></div>
   </div>
 
-  <!-- 🐾 白貓圖角角 -->
   <img src="cat.png" alt="cat" class="corner-cat" />
 
-  <!-- ✅ Firebase 初始化 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
     import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
     const firebaseConfig = {
@@ -120,15 +107,9 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
     const db = getDatabase(app);
-    window.db = db;
-    window.ref = ref;
-    window.set = set;
-  </script>
 
-  <script>
-    function toggleMode() {
+    window.toggleMode = function () {
       const mode = document.getElementById("mode").value;
       const seatBox = document.getElementById("seat-box");
       if (mode === "self") {
@@ -146,7 +127,7 @@
       }
     }
 
-    async function submitLogin() {
+    window.submitLogin = async function () {
       const name = document.getElementById("name").value.trim();
       const seat = document.getElementById("seat").value;
       const mode = document.getElementById("mode").value;
@@ -164,7 +145,7 @@
       };
 
       try {
-        await set(ref(window.db, `login/${id}`), loginData);
+        await set(ref(db, `login/${id}`), loginData);
         document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
         sessionStorage.setItem("studentName", name);
         sessionStorage.setItem("studentId", id);
