@@ -1,4 +1,4 @@
-// ✅ 修正版 student-ui.js：從 chat/{questionId} 讀取聊天室資料
+// ✅ 修正版 student-ui.js：從 chat/{questionId} 讀取聊天室資料，並允許學生發言
 import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
 const db = window.db;
@@ -78,6 +78,29 @@ function listenToChatroom(questionId) {
     });
   });
 }
+
+// ✅ 新增：學生發送聊天室訊息
+window.sendChatMessage = function () {
+  const questionId = sessionStorage.getItem("questionId") || "unknown";
+  const text = document.getElementById("chatInput").value.trim();
+  if (!text) return alert("請輸入訊息");
+
+  const data = {
+    from: studentName,
+    type: "text",
+    text: text,
+    time: new Date().toISOString()
+  };
+
+  const chatRef = ref(db, `chat/${questionId}`);
+  push(chatRef, data)
+    .then(() => {
+      document.getElementById("chatInput").value = "";
+    })
+    .catch((err) => {
+      alert("❌ 發送失敗：" + err.message);
+    });
+};
 
 function showAnswerButtons(type, questionId, text) {
   const panel = document.getElementById("answerPanel");
