@@ -3,37 +3,52 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>白貓工作室 | 教師端互動介面</title>
+  <title>白貓工作室 × 小白出題系統</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
+    <!-- 左側控制面板 -->
     <div class="left">
-      <h2>STUDENT QUESTION</h2>
-      <button onclick="takeScreenshot()">Take Screenshot</button>
+      <h2>📢 出題與回應控制台</h2>
+      <h3 style="color: #666;">白貓工作室 × 小白出題系統</h3>
+
+      <button onclick="takeScreenshot()">📸 擷取畫面（未啟用）</button>
       <br /><br />
-      <img src="assets/qr-placeholder.png" alt="[QR Code]" onerror="this.alt='[QR 圖示]'" width="100" />
+      <img src="assets/qr-placeholder.png" alt="[QR 圖示]" onerror="this.alt='[QR 圖示]'" width="100" />
       <br />
+
       <input type="text" id="login-link" value="https://tangcat1125.github.io/catclassroom/student-ui/rollcall.html" />
       <br />
-      <button onclick="copyLink()">LNK</button>
-      <button onclick="showQuestionPanel()">ASK</button>
+      <button onclick="copyLink()">🔗 一鍵複製登入連結</button>
+      <button onclick="showQuestionPanel()">🧠 前往派題中心</button>
+
       <div class="student-status-list">
+        <h4>✅ 班級學生狀態</h4>
         <div class="student-row"><span class="blue"></span> A</div>
         <div class="student-row"><span class="blue"></span> B</div>
         <div class="student-row"><span class="red"></span> C</div>
         <div class="student-row"><span class="red"></span> D</div>
         <div class="student-row"><span class="blue"></span> E</div>
         <div class="student-row"><span class="green"></span> F</div>
+        <h4>⚠️ 陌生登入名單</h4>
+        <!-- guest 將自動插入 -->
       </div>
     </div>
+
+    <!-- 右側回應顯示區 -->
     <div class="right">
+      <h3>📷 作答圖片預覽（來自學生端）</h3>
       <div class="response-board">
         <!-- 學生回答訊息將顯示於此 -->
       </div>
     </div>
   </div>
 
+  <!-- 品牌貓咪角落裝飾 -->
+  <img src="cat.png" alt="白貓標誌" style="position: fixed; bottom: 12px; right: 12px; width: 60px; opacity: 0.9;" />
+
+  <!-- 控制邏輯 -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
