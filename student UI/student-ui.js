@@ -51,6 +51,7 @@ onValue(currentQuestionRef, (snapshot) => {
   }
 
   loadAnswers(qid);
+  listenToChat(qid); // ✅ 綁定對應題目的聊天室
 });
 
 function showAnswerButtons(type, questionId, text) {
@@ -140,6 +141,7 @@ function loadAnswers(qid) {
   });
 }
 
+// 🆘 求救系統
 const helpBtn = document.getElementById("help-button");
 helpBtn.addEventListener("click", () => {
   const form = document.getElementById("helpForm");
@@ -167,6 +169,7 @@ window.sendHelp = function () {
     });
 };
 
+// 💬 公開留言
 window.sendPublicMessage = async function () {
   const msg = document.getElementById("publicMessage").value.trim();
   if (!msg) return alert("請輸入訊息！");
@@ -179,7 +182,6 @@ window.sendPublicMessage = async function () {
 
   const dbRef = ref(db, "messages");
   await push(dbRef, message);
-
   document.getElementById("publicMessage").value = "";
 };
 
@@ -198,6 +200,38 @@ onValue(messagesRef, (snapshot) => {
     document.getElementById("messageList").appendChild(div);
   }
 });
+
+// 🔗 課程聊天室功能
+function listenToChat(qid) {
+  const chatRef = ref(db, `chat/${qid}`);
+  const chatList = document.getElementById("chatList");
+  onValue(chatRef, (snapshot) => {
+    const data = snapshot.val();
+    chatList.innerHTML = "";
+    for (let key in data) {
+      const msg = data[key];
+      const div = document.createElement("div");
+      div.className = "chat-item";
+      div.innerHTML = `<strong>${msg.from}</strong>: ${msg.text}`;
+      chatList.appendChild(div);
+    }
+  });
+}
+
+window.sendChatMessage = async function () {
+  const msg = document.getElementById("chatInput").value.trim();
+  const qid = sessionStorage.getItem("questionId");
+  if (!msg || !qid) return;
+
+  const data = {
+    from: studentName,
+    time: new Date().toISOString(),
+    text: msg
+  };
+
+  await push(ref(db, `chat/${qid}`), data);
+  document.getElementById("chatInput").value = "";
+};
 
 function formatTime(isoStr) {
   const d = new Date(isoStr);
