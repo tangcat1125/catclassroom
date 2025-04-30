@@ -1,4 +1,4 @@
-<!-- ✅ 已修正聊天室功能 StudentUi_Login.html -->
+<!-- ✅ 已修正聊天室功能 StudentUi_Login.html（移除留言牆） -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
   <head>
@@ -84,12 +84,6 @@
           <button onclick="sendChatMessage()" class="send-btn">送出聊天室訊息</button>
         </div>
       </div>
-
-      <div class="help-box" style="margin-top: 30px;">
-        <h3>💬 留言牆（大家都看得到喔）</h3>
-        <textarea id="publicMessage" placeholder="輸入你想說的話..." rows="3" style="width: 100%; padding: 10px;"></textarea>
-        <button onclick="sendPublicMessage()" class="send-btn" style="margin-top: 10px;">送出留言</button>
-      </div>
     </div>
 
     <img src="cat.png" alt="白貓" style="position: fixed; bottom: 8px; right: 8px; width: 60px; opacity: 0.9;" />
@@ -111,47 +105,5 @@
     </script>
 
     <script type="module" src="student-ui.js"></script>
-
-    <script>
-      function listenToPublicWall() {
-        const wallDiv = document.getElementById("messageList");
-        const wallRef = window.db.ref("publicWall");
-
-        wallRef.on("value", (snapshot) => {
-          const data = snapshot.val();
-          wallDiv.innerHTML = "";
-          if (!data) return;
-
-          const today = new Date().toISOString().slice(0, 10);
-          const msgs = Object.values(data).filter(msg => msg.time && msg.time.startsWith(today));
-
-          msgs.forEach((msg) => {
-            const div = document.createElement("div");
-            const isMention = msg.text.includes("@");
-            div.innerHTML = `🗯️ <strong>${msg.from}</strong>：<span${isMention ? " class='highlight-blink'" : ""}>${msg.text}</span>`;
-            wallDiv.appendChild(div);
-          });
-        });
-      }
-
-      function sendPublicMessage() {
-        const name = document.getElementById("student-name").innerText || "匿名";
-        const text = document.getElementById("publicMessage").value.trim();
-        if (!text) return;
-
-        const newMsg = {
-          from: name,
-          text: text,
-          time: new Date().toISOString()
-        };
-
-        window.db.ref("publicWall").push(newMsg);
-        document.getElementById("publicMessage").value = "";
-      }
-
-      window.addEventListener("DOMContentLoaded", () => {
-        listenToPublicWall();
-      });
-    </script>
   </body>
 </html>
