@@ -44,6 +44,7 @@
 - ✅ 在 rollcall.html 登入後使用 sessionStorage 存入基本資訊（ID/姓名/班級）
 - ✅ 接著進入 handwrite-upload.html，自動載入學生身份與題目（若有）
 - ✅ 畫圖 ➜ 點擊上傳 ➜ 預覽圖顯示即成功
+- 🔗 預設正式入口網址：https://tangcat1125.github.io/catclassroom/handwrite-module/handwrite-upload.html
 
 【開發擴充方向】
 - 圖片可上傳至 Firebase Storage，僅在 Database 儲存網址（未來開啟）
