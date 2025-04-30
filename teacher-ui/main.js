@@ -1,4 +1,4 @@
-// main.js：教師端截圖功能＋broadcast 廣播支援
+// main.js：教師端穩定版擷取畫面 + 廣播（無 import 模組）
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, onChildAdded, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
@@ -30,18 +30,20 @@ function showQuestionPanel() {
 }
 
 function takeScreenshot() {
-  import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js').then(({ default: html2canvas }) => {
-    html2canvas(document.body).then(canvas => {
-      const imageData = canvas.toDataURL("image/png");
-      const screenshotRef = ref(db, "broadcast/screenshot");
-      set(screenshotRef, {
-        url: imageData,
-        timestamp: Date.now()
-      }).then(() => {
-        alert("📸 截圖已成功上傳給學生！");
-      }).catch(err => {
-        alert("❌ 截圖上傳失敗：「" + err.message + "」");
-      });
+  if (typeof html2canvas === 'undefined') {
+    alert("⚠️ 無法擷取畫面：html2canvas 尚未載入。");
+    return;
+  }
+  html2canvas(document.body).then(canvas => {
+    const imageData = canvas.toDataURL("image/png");
+    const screenshotRef = ref(db, "broadcast/screenshot");
+    set(screenshotRef, {
+      url: imageData,
+      timestamp: Date.now()
+    }).then(() => {
+      alert("📸 截圖已成功上傳給學生！");
+    }).catch(err => {
+      alert("❌ 截圖上傳失敗：「" + err.message + "」");
     });
   });
 }
