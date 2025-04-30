@@ -3,113 +3,67 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>學生登入 - 白貓工作室</title>
-  <style>
-    body {
-      font-family: "Microsoft JhengHei", sans-serif;
-      background-color: #e3f2fd;
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 400px;
-      margin: 80px auto;
-      background-color: #fff;
-      border-radius: 12px;
-      padding: 32px 24px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-      position: relative;
-    }
-
-    h2 {
-      text-align: center;
-      color: #0d47a1;
-      margin-bottom: 24px;
-    }
-
-    label {
-      display: block;
-      font-size: 16px;
-      margin-top: 16px;
-      color: #333;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-sizing: border-box;
-    }
-
-    button {
-      width: 100%;
-      margin-top: 28px;
-      padding: 14px;
-      font-size: 18px;
-      background-color: #42a5f5;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #1976d2;
-    }
-
-    .note {
-      text-align: center;
-      margin-top: 16px;
-      font-size: 15px;
-      color: green;
-    }
-
-    /* 🐱 貓角角 */
-    .corner-cat {
-      position: fixed;
-      bottom: 8px;
-      right: 8px;
-      width: 60px;
-      opacity: 0.85;
-    }
-  </style>
+  <title>學生作答區</title>
+  <link rel="stylesheet" href="Student-Interface.css" />
 </head>
 <body>
-
-  <div class="container">
-    <h2>學生登入</h2>
-
-    <label for="mode">我是...</label>
-    <select id="mode" onchange="toggleMode()">
-      <option value="self">本班學生</option>
-      <option value="guest">其他班來賓</option>
-    </select>
-
-    <label for="name">請輸入您的暱稱或本名：</label>
-    <input type="text" id="name" placeholder="如：小熊 / Lily / Quentin" />
-
-    <div id="seat-box">
-      <label for="seat">請輸入您的座號（數字）：</label>
-      <input type="number" id="seat" min="1" max="50" />
+  <div class="student-ui">
+    <!-- 🧾 標頭 -->
+    <div class="header">
+      <h2>學生作答區</h2>
+      <div class="student-info">
+        班級：<span id="student-class">...</span>　
+        姓名：<span id="student-name">...</span>
+        <div id="red-light" class="light red"></div>
+      </div>
     </div>
 
-    <button onclick="submitLogin()">登入教室</button>
-    <div id="result" class="note"></div>
+    <!-- 📣 訊息板 -->
+    <div class="message-board">
+      <h3>📢 系統訊息</h3>
+      <div id="systemMessage">等待老師出題中...</div>
+
+      <!-- 💉 血條進度 -->
+      <div class="progress-bar">
+        <div id="progressFill" class="progress-fill" style="width: 0%">0%</div>
+      </div>
+
+      <!-- ✅ 學生回應/留言牆 -->
+      <div id="messageList"></div>
+    </div>
+
+    <!-- ✅ 答題區 -->
+    <div class="answer-panel" id="answerPanel" style="display: none;">
+      <h3>請作答：</h3>
+      <div id="questionText"></div>
+      <div id="answerButtons"></div>
+    </div>
+
+    <!-- 🆘 求救區 -->
+    <div class="help-box">
+      <button id="help-button" class="send-btn">🆘 我要求救</button>
+      <div id="helpForm" style="display: none; margin-top: 10px;">
+        <textarea id="helpText" placeholder="請輸入你遇到的問題..." rows="4" style="width: 100%; padding: 10px;"></textarea>
+        <button onclick="sendHelp()" class="send-btn" style="margin-top: 10px;">🚀 發送給老師</button>
+        <div id="helpStatus" class="flash-text" style="display: none;">✅ 已傳送求救訊息</div>
+      </div>
+    </div>
+
+    <!-- 💬 公開留言牆 -->
+    <div class="help-box" style="margin-top: 30px;">
+      <h3>🗨️ 留言牆（大家都看得到喔）</h3>
+      <textarea id="publicMessage" placeholder="輸入你想說的話..." rows="3" style="width: 100%; padding: 10px;"></textarea>
+      <button onclick="sendPublicMessage()" class="send-btn" style="margin-top: 10px;">送出留言</button>
+    </div>
   </div>
 
-  <!-- 貓咪圖 -->
-  <img src="cat.png" alt="cat" class="corner-cat" />
+  <!-- 🐱 固定右下貓貓 -->
+  <img src="cat.png" alt="白貓" style="position: fixed; bottom: 8px; right: 8px; width: 60px; opacity: 0.9;" />
 
-  <!-- ✅ Firebase & 登入邏輯 -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
-
+  <!-- ✅ Firebase 初始化 -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
       authDomain: "catclassroom-login.firebaseapp.com",
@@ -119,63 +73,11 @@
       messagingSenderId: "123487233181",
       appId: "1:123487233181:web:aecc2891dc2d1096962074"
     };
-
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getDatabase(app);
-    window.db = db;
-    window.ref = ref;
-    window.set = set;
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.database();
   </script>
 
-  <script>
-    function toggleMode() {
-      const mode = document.getElementById("mode").value;
-      const seatBox = document.getElementById("seat-box");
-      if (mode === "self") {
-        seatBox.innerHTML = `
-          <label for="seat">請輸入您的座號（數字）：</label>
-          <input type="number" id="seat" min="1" max="50" />
-        `;
-      } else {
-        seatBox.innerHTML = `
-          <label for="seat">請選擇您的外班代號：</label>
-          <select id="seat">
-            ${Array.from({ length: 30 }, (_, i) => `<option value="G${i + 1}">G${i + 1}</option>`).join("")}
-          </select>
-        `;
-      }
-    }
-
-    async function submitLogin() {
-      const name = document.getElementById("name").value.trim();
-      const seat = document.getElementById("seat").value;
-      const mode = document.getElementById("mode").value;
-      const id = (mode === "self") ? seat.padStart(2, "0") : seat;
-
-      if (!name || !id) {
-        alert("請完整填寫暱稱與座號！");
-        return;
-      }
-
-      const loginData = {
-        StudentName: name,
-        StudentID: id,
-        Timestamp: new Date().toISOString()
-      };
-
-      try {
-        await set(ref(window.db, `login/${id}`), loginData);
-        document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
-        sessionStorage.setItem("studentName", name);
-        sessionStorage.setItem("studentId", id);
-        sessionStorage.setItem("studentClass", mode === "self" ? "六年0班" : "外班訪客");
-        window.location.href = "StudentUi_Login.html";
-      } catch (error) {
-        console.error("❌ Firebase 寫入失敗：", error);
-        alert("登入失敗，請稍後再試！");
-      }
-    }
-  </script>
+  <!-- 🧠 功能邏輯 -->
+  <script type="module" src="student-ui.js"></script>
 </body>
 </html>
