@@ -1,11 +1,11 @@
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+// ✅ 白貓教室學生互動邏輯 student-ui.js
+import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
 const db = window.db;
 let studentId = sessionStorage.getItem("studentId");
 let studentName = sessionStorage.getItem("studentName");
 let studentClass = sessionStorage.getItem("studentClass");
 
-// ✅ 兼容陌生人
 if (!studentId) {
   const now = Date.now();
   studentId = `guest_${now}`;
@@ -13,18 +13,13 @@ if (!studentId) {
   studentClass = "自由教室";
 }
 
-// ✅ 顯示基本資料
 document.getElementById("student-name").innerText = studentName;
 document.getElementById("student-class").innerText = studentClass;
 
-// 🔴 紅燈控制
 const redLight = document.getElementById("red-light");
-
-// 預設總人數（未來可讀 Firebase 調整）
 const TOTAL_STUDENTS = 13;
 
-// ✅ 監聽出題
-const currentQuestionRef = ref(db, "/currentQuestion");
+const currentQuestionRef = ref(db, "/teacher/currentQuestion");
 onValue(currentQuestionRef, (snapshot) => {
   const question = snapshot.val();
   if (!question || !question.type || !question.text) return;
@@ -33,14 +28,17 @@ onValue(currentQuestionRef, (snapshot) => {
   const qtype = question.type;
   const qtext = question.text;
 
-  // 顯示題目
   document.getElementById("systemMessage").innerText = `📢 老師出題：${qtext}`;
   sessionStorage.setItem("questionId", qid);
 
-  // 紅燈閃爍
   if (redLight) redLight.classList.add("active");
 
-  // 題型反應
+  const msgList = document.getElementById("messageList");
+  const teacherMsg = document.createElement("div");
+  teacherMsg.className = "message-item";
+  teacherMsg.innerText = `📢 老師出題：${qtext}`;
+  msgList.prepend(teacherMsg);
+
   if (qtype === "handwrite") {
     setTimeout(() => {
       const url = `handwrite-upload.html?questionId=${qid}&studentId=${studentId}`;
@@ -48,13 +46,13 @@ onValue(currentQuestionRef, (snapshot) => {
     }, 800);
   } else if (qtype === "truefalse" || qtype === "choice") {
     showAnswerButtons(qtype, qid, qtext);
+  } else if (qtype === "shortanswer") {
+    showShortAnswerBox(qid, qtext);
   }
 
-  // 顯示目前所有回應
   loadAnswers(qid);
 });
 
-// ✅ 顯示按鈕作答區
 function showAnswerButtons(type, questionId, text) {
   const panel = document.getElementById("answerPanel");
   const textDiv = document.getElementById("questionText");
@@ -73,7 +71,28 @@ function showAnswerButtons(type, questionId, text) {
   });
 }
 
-// ✅ 傳送作答
+function showShortAnswerBox(questionId, questionText) {
+  const panel = document.getElementById("answerPanel");
+  const textDiv = document.getElementById("questionText");
+  const buttonsDiv = document.getElementById("answerButtons");
+  panel.style.display = "block";
+  textDiv.innerText = questionText;
+
+  buttonsDiv.innerHTML = `
+    <textarea id="shortAnswerInput" rows="3" style="width:100%;padding:10px;border-radius:6px;border:1px solid #ccc;"></textarea>
+    <button class="send-btn" style="margin-top:10px;" onclick="submitShortAnswer('${questionId}')">送出簡答</button>
+  `;
+}
+
+window.submitShortAnswer = function (qid) {
+  const answer = document.getElementById("shortAnswerInput").value.trim();
+  if (!answer) {
+    alert("請輸入內容！");
+    return;
+  }
+  submitAnswer(qid, answer);
+};
+
 function submitAnswer(questionId, answerText) {
   const data = {
     studentId,
@@ -94,7 +113,6 @@ function submitAnswer(questionId, answerText) {
     });
 }
 
-// ✅ 顯示所有人回答＋進度條
 function loadAnswers(qid) {
   const allAnswersRef = ref(db, "answers");
   const msgList = document.getElementById("messageList");
@@ -116,15 +134,14 @@ function loadAnswers(qid) {
       }
     }
 
-    // 血條更新
     const percent = Math.round((count / TOTAL_STUDENTS) * 100);
     bar.style.width = `${percent}%`;
     bar.innerText = `${count} / ${TOTAL_STUDENTS}`;
   });
 }
 
-// ✅ 求救邏輯
-document.getElementById("help-button").addEventListener("click", () => {
+const helpBtn = document.getElementById("help-button");
+helpBtn.addEventListener("click", () => {
   const form = document.getElementById("helpForm");
   form.style.display = form.style.display === "none" ? "block" : "none";
 });
@@ -149,3 +166,40 @@ window.sendHelp = function () {
       alert("❌ 求救失敗：" + err.message);
     });
 };
+
+window.sendPublicMessage = async function () {
+  const msg = document.getElementById("publicMessage").value.trim();
+  if (!msg) return alert("請輸入訊息！");
+
+  const message = {
+    from: studentName,
+    time: new Date().toISOString(),
+    content: msg
+  };
+
+  const dbRef = ref(db, "messages");
+  await push(dbRef, message);
+
+  document.getElementById("publicMessage").value = "";
+};
+
+const messagesRef = ref(db, "messages");
+onValue(messagesRef, (snapshot) => {
+  const list = snapshot.val();
+  if (!list) return;
+  for (const key in list) {
+    const msg = list[key];
+    const div = document.createElement("div");
+    div.className = "message-bubble";
+    div.innerHTML = `
+      <div class="meta">💬 ${msg.from} @ ${formatTime(msg.time)}</div>
+      <div>${msg.content}</div>
+    `;
+    document.getElementById("messageList").appendChild(div);
+  }
+});
+
+function formatTime(isoStr) {
+  const d = new Date(isoStr);
+  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
