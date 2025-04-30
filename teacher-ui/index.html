@@ -3,39 +3,61 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>白貓工作室 | 教師端互動介面</title>
+  <title>白貓工作室 | 教師端監控介面</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- 加上 html2canvas 截圖工具 -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <!-- *** 加入 html2canvas 函式庫，讓截圖功能可以用 *** -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
   <div class="container">
-    <div class="left">
-      <h2>STUDENT QUESTION</h2>
-      <button onclick="takeScreenshot()">擷取畫面（去廣播）</button>
+    <!-- 左側控制面板 -->
+    <aside class="left">
+      <h2>教師控制面板</h2>
+
+      <!-- 截圖按鈕 (功能由 main.js 提供) -->
+      <button onclick="takeScreenshot()">擷取回應區畫面</button>
       <br /><br />
-      <img src="assets/qr-placeholder.png" alt="[QR 代碼]" onerror="this.alt='[QR 圖示]'" width="100" />
+
+      <!-- QR Code 顯示區 -->
+      <img src="assets/qr-placeholder.png" alt="學生登入 QR Code (待產生)" onerror="this.alt='[QR 圖示載入失敗]'" width="100" />
       <br />
-      <input type="text" id="login-link" value="https://tangcat1125.github.io/catclassroom/student-ui/rollcall.html" />
+
+      <!-- 學生登入連結 -->
+      <label for="login-link" style="display: block; margin-top: 10px; font-weight: bold;">學生登入連結：</label>
+      <input type="text" id="login-link" value="https://tangcat1125.github.io/catclassroom/student UI/rollcall.html" readonly style="width: calc(100% - 12px); margin-bottom: 5px;" />
       <br />
-      <button onclick="copyLink()">LNK</button>
-      <button onclick="showQuestionPanel()">ASK</button>
+
+      <!-- 控制按鈕 -->
+      <button onclick="copyLink()" title="複製學生登入連結">複製連結 (LNK)</button>
+      <button onclick="showQuestionPanel()" title="開啟題目設定面板 (尚未實作)">題目設定 (ASK)</button>
+      <button onclick="window.open('../task-system/task-center.html', '_blank')" title="開啟派題中心">開啟派題中心</button> <!-- 新增：直接開啟派題中心 -->
+
+
+      <!-- 學生狀態列表 (目前為靜態，應由 main.js 動態產生) -->
       <div class="student-status-list">
-        <div class="student-row"><span class="blue"></span> A</div>
-        <div class="student-row"><span class="blue"></span> B</div>
-        <div class="student-row"><span class="red"></span> C</div>
-        <div class="student-row"><span class="red"></span> D</div>
-        <div class="student-row"><span class="blue"></span> E</div>
-        <div class="student-row"><span class="green"></span> F</div>
+        <h4>學生狀態：</h4>
+        <!-- 這是靜態範例，實際應由 JS 監聽 /login 動態產生 -->
+        <div class="student-row" data-id="A"><span class="blue"></span> A</div>
+        <div class="student-row" data-id="B"><span class="blue"></span> B</div>
+        <div class="student-row" data-id="C"><span class="blue"></span> C</div>
+        <div class="student-row" data-id="D"><span class="blue"></span> D</div>
+        <div class="student-row" data-id="E"><span class="blue"></span> E</div>
+        <div class="student-row" data-id="F"><span class="blue"></span> F</div>
+        <!-- 未來由 main.js 動態增加 -->
       </div>
-    </div>
-    <div class="right">
+    </aside>
+
+    <!-- 右側回應顯示區 -->
+    <main class="right">
+      <h2>學生回應區</h2>
       <div class="response-board">
-        <!-- 學生回答訊息將顯示於此 -->
+        <!-- 學生回答訊息將由 main.js 動態顯示於此 -->
+        <p>老師尚未出題或正在等待學生回應...</p>
       </div>
-    </div>
+    </main>
   </div>
 
+  <!-- 載入主要的 JavaScript 檔案 -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
