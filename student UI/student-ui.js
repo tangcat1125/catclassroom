@@ -1,70 +1,151 @@
-// ✅ 載入 Firebase Realtime Database 模組
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
-// ✅ 拿到 Firebase DB 物件（來自全域變數）
 const db = window.db;
+let studentId = sessionStorage.getItem("studentId");
+let studentName = sessionStorage.getItem("studentName");
+let studentClass = sessionStorage.getItem("studentClass");
 
-// ✅ 從 sessionStorage 取得登入時儲存的學生資訊
-const studentName = sessionStorage.getItem("studentName");
-const studentId = sessionStorage.getItem("studentId");
-const studentClass = sessionStorage.getItem("studentClass");
+// ✅ 兼容陌生人
+if (!studentId) {
+  const now = Date.now();
+  studentId = `guest_${now}`;
+  studentName = "訪客";
+  studentClass = "自由教室";
+}
 
-// ✅ 顯示學生班級與姓名
-document.getElementById("student-name").innerText = studentName || "未登入";
-document.getElementById("student-class").innerText = studentClass || "未知班級";
+// ✅ 顯示基本資料
+document.getElementById("student-name").innerText = studentName;
+document.getElementById("student-class").innerText = studentClass;
 
-// 🟧 點擊橘燈開關留言區
-document.getElementById("help-button").addEventListener("click", () => {
-  const box = document.getElementById("helpBox");
-  box.style.display = (box.style.display === "none" || box.style.display === "") ? "block" : "none";
+// 🔴 紅燈控制
+const redLight = document.getElementById("red-light");
+
+// 預設總人數（未來可讀 Firebase 調整）
+const TOTAL_STUDENTS = 13;
+
+// ✅ 監聽出題
+const currentQuestionRef = ref(db, "/currentQuestion");
+onValue(currentQuestionRef, (snapshot) => {
+  const question = snapshot.val();
+  if (!question || !question.type || !question.text) return;
+
+  const qid = question.id || question.questionId || "unknown";
+  const qtype = question.type;
+  const qtext = question.text;
+
+  // 顯示題目
+  document.getElementById("systemMessage").innerText = `📢 老師出題：${qtext}`;
+  sessionStorage.setItem("questionId", qid);
+
+  // 紅燈閃爍
+  if (redLight) redLight.classList.add("active");
+
+  // 題型反應
+  if (qtype === "handwrite") {
+    setTimeout(() => {
+      const url = `handwrite-upload.html?questionId=${qid}&studentId=${studentId}`;
+      window.open(url, "_blank");
+    }, 800);
+  } else if (qtype === "truefalse" || qtype === "choice") {
+    showAnswerButtons(qtype, qid, qtext);
+  }
+
+  // 顯示目前所有回應
+  loadAnswers(qid);
 });
 
-// 🟧 送出留言給老師
-window.sendHelp = function () {
-  const message = document.getElementById("helpText").value;
-  if (!message) {
-    alert("請先輸入問題訊息！");
-    return;
-  }
-  set(ref(db, `help/${studentId}`), {
-    message,
-    time: new Date().toISOString()
-  }).then(() => {
-    alert("✅ 已送出給老師！");
-    document.getElementById("helpBox").style.display = "none";
-  }).catch((error) => {
-    alert("❌ 發送失敗：" + error.message);
+// ✅ 顯示按鈕作答區
+function showAnswerButtons(type, questionId, text) {
+  const panel = document.getElementById("answerPanel");
+  const textDiv = document.getElementById("questionText");
+  const buttonsDiv = document.getElementById("answerButtons");
+  panel.style.display = "block";
+  textDiv.innerText = text;
+  buttonsDiv.innerHTML = "";
+
+  const options = (type === "truefalse") ? ["是", "否"] : ["A", "B", "C", "D"];
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "send-btn";
+    btn.innerText = opt;
+    btn.onclick = () => submitAnswer(questionId, opt);
+    buttonsDiv.appendChild(btn);
   });
-};
+}
 
-// 🔴 監聽老師是否出題
-const questionRef = ref(db, "teacher/question");
-
-onValue(questionRef, (snapshot) => {
-  const data = snapshot.val();
-  const redLight = document.getElementById("red-light");
-  const modal = document.getElementById("question-modal");
-
-  if (data && data.active) {
-    redLight.classList.add("active");
-    modal.style.display = "flex";
-    document.getElementById("question-image").src = data.image || "";
-  } else {
-    redLight.classList.remove("active");
-    modal.style.display = "none";
-  }
-});
-
-// 🟩 送出答案給老師
-window.submitAnswer = function () {
-  set(ref(db, `answers/${studentId}`), {
+// ✅ 傳送作答
+function submitAnswer(questionId, answerText) {
+  const data = {
+    studentId,
     name: studentName,
-    time: new Date().toISOString(),
-    status: "done"
-  }).then(() => {
-    alert("✅ 答案已送出！");
-    document.getElementById("question-modal").style.display = "none";
-  }).catch((error) => {
-    alert("❌ 發送答案失敗：" + error.message);
+    answer: answerText,
+    questionId,
+    time: new Date().toISOString()
+  };
+
+  set(ref(db, `answers/${studentId}/${questionId}`), data)
+    .then(() => {
+      alert("✅ 答案已送出！");
+      document.getElementById("answerPanel").style.display = "none";
+      if (redLight) redLight.classList.remove("active");
+    })
+    .catch((err) => {
+      alert("❌ 發送失敗：" + err.message);
+    });
+}
+
+// ✅ 顯示所有人回答＋進度條
+function loadAnswers(qid) {
+  const allAnswersRef = ref(db, "answers");
+  const msgList = document.getElementById("messageList");
+  const bar = document.getElementById("progressFill");
+
+  onValue(allAnswersRef, (snapshot) => {
+    const data = snapshot.val();
+    let count = 0;
+    msgList.innerHTML = "";
+
+    for (let sid in data) {
+      const record = data[sid][qid];
+      if (record) {
+        count++;
+        const div = document.createElement("div");
+        div.className = "message-item";
+        div.innerText = `✅ ${record.name}：回答「${record.answer}」`;
+        msgList.appendChild(div);
+      }
+    }
+
+    // 血條更新
+    const percent = Math.round((count / TOTAL_STUDENTS) * 100);
+    bar.style.width = `${percent}%`;
+    bar.innerText = `${count} / ${TOTAL_STUDENTS}`;
   });
+}
+
+// ✅ 求救邏輯
+document.getElementById("help-button").addEventListener("click", () => {
+  const form = document.getElementById("helpForm");
+  form.style.display = form.style.display === "none" ? "block" : "none";
+});
+
+window.sendHelp = function () {
+  const msg = document.getElementById("helpText").value.trim();
+  if (!msg) return alert("請輸入問題！");
+
+  const data = {
+    message: msg,
+    from: studentName,
+    class: studentClass,
+    time: new Date().toISOString()
+  };
+
+  set(ref(db, `help/${studentId}`), data)
+    .then(() => {
+      document.getElementById("helpStatus").style.display = "block";
+      document.getElementById("helpText").value = "";
+    })
+    .catch((err) => {
+      alert("❌ 求救失敗：" + err.message);
+    });
 };
