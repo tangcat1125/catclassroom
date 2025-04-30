@@ -4,30 +4,106 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>學生登入 - 白貓工作室</title>
-  <link rel="stylesheet" href="rollcall-style.css" />
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", sans-serif;
+      background-color: #e3f2fd;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: 80px auto;
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 32px 24px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #0d47a1;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 16px;
+      margin-top: 16px;
+      color: #333;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 28px;
+      padding: 14px;
+      font-size: 18px;
+      background-color: #42a5f5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #1976d2;
+    }
+
+    .note {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 15px;
+      color: green;
+    }
+
+    /* 🐱 右下角貓圖 */
+    .corner-cat {
+      position: fixed;
+      bottom: 8px;
+      right: 8px;
+      width: 60px;
+      opacity: 0.9;
+    }
+  </style>
 </head>
 <body>
+
   <div class="container">
     <h2>學生登入</h2>
-    <label>我是...</label>
+
+    <label for="mode">我是...</label>
     <select id="mode" onchange="toggleMode()">
       <option value="self">本班學生</option>
       <option value="guest">其他班來賓</option>
     </select>
 
     <label for="name">請輸入您的暱稱或本名：</label>
-    <input type="text" id="name" placeholder="如：小熊 / 昆廷 / Lily" />
+    <input type="text" id="name" placeholder="如：小熊 / Lily / Quentin" />
 
     <div id="seat-box">
       <label for="seat">請輸入您的座號（數字）：</label>
       <input type="number" id="seat" min="1" max="50" />
     </div>
 
-    <button class="btn" onclick="submitLogin()">登入教室</button>
+    <button onclick="submitLogin()">登入教室</button>
     <div id="result" class="note"></div>
   </div>
 
-  <!-- ✅ Firebase 設定與模組 -->
+  <!-- 🐾 白貓圖角角 -->
+  <img src="cat.png" alt="cat" class="corner-cat" />
+
+  <!-- ✅ Firebase 初始化 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
@@ -38,23 +114,19 @@
       authDomain: "catclassroom-login.firebaseapp.com",
       databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "catclassroom-login",
-      storageBucket: "catclassroom-login.firebasestorage.app",
+      storageBucket: "catclassroom-login.appspot.com",
       messagingSenderId: "123487233181",
-      appId: "1:123487233181:web:aecc2891dc2d1096962074",
-      measurementId: "G-6C92GYSX3F"
+      appId: "1:123487233181:web:aecc2891dc2d1096962074"
     };
 
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getDatabase(app);
-
-    // 掛到 window 讓一般 JS 可用
     window.db = db;
     window.ref = ref;
     window.set = set;
   </script>
 
-  <!-- ✅ 登入功能 -->
   <script>
     function toggleMode() {
       const mode = document.getElementById("mode").value;
