@@ -1,9 +1,8 @@
-/* === 白貓工作室 - 學生作答 UI 最終版 === */
+/* === 白貓工作室 - 學生作答 UI 最終版 CSS === */
 
-/* 🌈 基本背景與排版 */
 body {
   font-family: "Microsoft JhengHei", sans-serif;
-  background-color: #e3f2fd; /* 粉藍 */
+  background-color: #e3f2fd;
   margin: 0;
   padding: 20px;
   color: #333;
@@ -15,7 +14,6 @@ body {
   padding: 20px;
 }
 
-/* 🧾 標題區 */
 .header {
   margin-bottom: 20px;
 }
@@ -31,7 +29,6 @@ body {
   margin-top: 8px;
 }
 
-/* 🔴 紅燈提示（出題時閃爍） */
 .light.red {
   width: 18px;
   height: 18px;
@@ -49,12 +46,11 @@ body {
 }
 
 @keyframes blinkRed {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.3; }
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
   100% { opacity: 1; }
 }
 
-/* 📣 訊息板區（包含系統訊息 + 血條 + 回應列表） */
 .message-board {
   background-color: #ffffff;
   border: 2px solid #bbdefb;
@@ -76,7 +72,6 @@ body {
   color: #c62828;
 }
 
-/* 💉 血條進度 */
 .progress-bar {
   background-color: #eee;
   border-radius: 20px;
@@ -96,7 +91,6 @@ body {
   transition: width 0.5s ease;
 }
 
-/* 👥 學生回答列表 */
 #messageList {
   font-size: 15px;
   color: #333;
@@ -111,7 +105,6 @@ body {
   border-radius: 6px;
 }
 
-/* 📝 作答區（按鈕式） */
 .answer-panel {
   background-color: #ffffff;
   border-radius: 12px;
@@ -151,7 +144,6 @@ button.send-btn:hover {
   background-color: #1976d2;
 }
 
-/* 🆘 求救系統 */
 .help-box {
   background-color: #ffffff;
   border: 2px solid #ffcdd2;
@@ -161,7 +153,7 @@ button.send-btn:hover {
   box-shadow: 0 2px 6px rgba(255, 82, 82, 0.1);
 }
 
-textarea#helpText {
+textarea#helpText, textarea#publicMessage {
   width: 100%;
   min-height: 80px;
   padding: 10px;
@@ -173,7 +165,6 @@ textarea#helpText {
   resize: vertical;
 }
 
-/* 🔔 閃爍提示文字 */
 .flash-text {
   animation: flash 1s infinite alternate;
   color: #d32f2f;
@@ -186,4 +177,19 @@ textarea#helpText {
 @keyframes flash {
   0% { opacity: 1; }
   100% { opacity: 0.4; }
+}
+
+.message-bubble {
+  background-color: #fff8e1;
+  border-left: 4px solid #fbc02d;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  font-size: 15px;
+}
+
+.message-bubble .meta {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
 }
