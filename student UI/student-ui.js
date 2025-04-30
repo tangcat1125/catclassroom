@@ -51,7 +51,7 @@ onValue(currentQuestionRef, (snapshot) => {
   }
 
   loadAnswers(qid);
-  listenToChat(qid); // ✅ 綁定對應題目的聊天室
+  listenToChatroom(); // ✅ 取代原來誤用聊天室輸入邏輯，改成訊息接收
 });
 
 function showAnswerButtons(type, questionId, text) {
@@ -169,69 +169,29 @@ window.sendHelp = function () {
     });
 };
 
-// 💬 公開留言
-window.sendPublicMessage = async function () {
-  const msg = document.getElementById("publicMessage").value.trim();
-  if (!msg) return alert("請輸入訊息！");
-
-  const message = {
-    from: studentName,
-    time: new Date().toISOString(),
-    content: msg
-  };
-
-  const dbRef = ref(db, "messages");
-  await push(dbRef, message);
-  document.getElementById("publicMessage").value = "";
-};
-
-const messagesRef = ref(db, "messages");
-onValue(messagesRef, (snapshot) => {
-  const list = snapshot.val();
-  if (!list) return;
-  for (const key in list) {
-    const msg = list[key];
-    const div = document.createElement("div");
-    div.className = "message-bubble";
-    div.innerHTML = `
-      <div class="meta">💬 ${msg.from} @ ${formatTime(msg.time)}</div>
-      <div>${msg.content}</div>
-    `;
-    document.getElementById("messageList").appendChild(div);
-  }
-});
-
-// 🔗 課程聊天室功能
-function listenToChat(qid) {
-  const chatRef = ref(db, `chat/${qid}`);
-  const chatList = document.getElementById("chatList");
-  onValue(chatRef, (snapshot) => {
+// 📡 接收聊天室訊息串流（非輸入）
+function listenToChatroom() {
+  const list = document.getElementById("chatList");
+  const chatroomRef = ref(db, "chatroom");
+  onValue(chatroomRef, (snapshot) => {
     const data = snapshot.val();
-    chatList.innerHTML = "";
-    for (let key in data) {
-      const msg = data[key];
+    list.innerHTML = "";
+    if (!data) return;
+    Object.values(data).forEach((msg) => {
       const div = document.createElement("div");
       div.className = "chat-item";
-      div.innerHTML = `<strong>${msg.from}</strong>: ${msg.text}`;
-      chatList.appendChild(div);
-    }
+      if (msg.type === "link") {
+        div.innerHTML = `🔗 <strong>${msg.from}</strong>：<a href="${msg.url}" target="_blank">${msg.title}</a>`;
+      } else if (msg.type === "image") {
+        div.innerHTML = `🖼️ <strong>${msg.from}</strong>：<img src="${msg.url}" style="max-width: 200px">`;
+      } else if (msg.type === "text") {
+        const highlight = msg.text.includes("@") ? " style='background: #ffecb3'" : "";
+        div.innerHTML = `💬 <strong>${msg.from}</strong>：<span${highlight}>${msg.text}</span>`;
+      }
+      list.appendChild(div);
+    });
   });
 }
-
-window.sendChatMessage = async function () {
-  const msg = document.getElementById("chatInput").value.trim();
-  const qid = sessionStorage.getItem("questionId");
-  if (!msg || !qid) return;
-
-  const data = {
-    from: studentName,
-    time: new Date().toISOString(),
-    text: msg
-  };
-
-  await push(ref(db, `chat/${qid}`), data);
-  document.getElementById("chatInput").value = "";
-};
 
 function formatTime(isoStr) {
   const d = new Date(isoStr);
