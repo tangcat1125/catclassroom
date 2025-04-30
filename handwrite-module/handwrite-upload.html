@@ -1,48 +1,24 @@
+<!-- handwrite-upload-flex.html - 支援沒題目也能送出 -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>智慧手寫作答系統 - 白貓工作室</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>智慧手寫作答 - 彈性上傳版</title>
   <style>
     body {
       font-family: "Microsoft JhengHei", Arial, sans-serif;
       text-align: center;
       background-color: #f9f9f9;
       padding: 20px;
-      margin: 0;
-    }
-    h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
-    #info, #questionBlock {
-      margin-bottom: 20px;
-      font-size: 18px;
-      color: #333;
-    }
-    #questionContent {
-      margin: 10px auto;
-      padding: 10px;
-      max-width: 500px;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      background-color: #ffffff;
-      white-space: pre-wrap;
-    }
-    #controls {
-      margin-bottom: 10px;
     }
     canvas {
       border: 2px solid #ccc;
       margin-top: 10px;
-      background: #ffffff;
+      background: #fff;
       touch-action: none;
     }
-    .tools, .submit-btn {
-      margin-top: 15px;
-    }
-    button, select {
+    button {
       padding: 10px 20px;
       font-size: 16px;
       border-radius: 8px;
@@ -50,83 +26,32 @@
       cursor: pointer;
       background-color: #ffa726;
       color: white;
-      transition: background-color 0.3s;
-      margin: 5px;
-    }
-    button:hover {
-      background-color: #fb8c00;
+      margin: 10px;
     }
     #uploadStatus {
-      margin-top: 15px;
+      margin-top: 10px;
       font-size: 18px;
-      color: #28a745;
     }
     #previewImage {
-      margin-top: 15px;
+      margin-top: 10px;
       max-width: 150px;
       border: 1px solid #aaa;
-    }
-    #catDecoration {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      width: 80px;
-      opacity: 0.9;
-      z-index: 1000;
-      transition: transform 0.3s;
-    }
-    #catDecoration:hover {
-      transform: scale(1.1);
+      display: none;
     }
   </style>
 </head>
 <body>
-
-  <h1>✏️ 智慧手寫作答系統</h1>
-
-  <div id="info">
-    <div id="studentInfo"></div>
-  </div>
-
-  <div id="questionBlock" style="display:none;">
-    <div id="questionInfo"></div>
-    <div id="questionContent"></div>
-  </div>
-
-  <div id="controls">
-    <select id="colorPicker">
-      <option value="#000000">黑色</option>
-      <option value="#ff0000">紅色</option>
-      <option value="#0000ff">藍色</option>
-    </select>
-    <select id="lineWidthPicker">
-      <option value="2">細線</option>
-      <option value="5">中線</option>
-      <option value="8">粗線</option>
-    </select>
-  </div>
-
+  <h1>📐 智慧手寫（彈性版）</h1>
   <canvas id="handwriteCanvas" width="300" height="300"></canvas>
-
-  <div class="tools">
-    <button type="button" onclick="clearCanvas()">🧹 清除畫布</button>
-  </div>
-
-  <div class="submit-btn">
-    <button type="button" onclick="uploadHandwrite()">📤 上傳作答</button>
-  </div>
-
+  <br/>
+  <button onclick="clearCanvas()">清除畫布</button>
+  <button onclick="uploadHandwrite()">📤 上傳作答</button>
   <div id="uploadStatus"></div>
-  <img id="previewImage" style="display:none;" />
-
-  <!-- 返回按鈕：貓咪點擊返回 rollcall.html -->
-  <a href="../rollcall.html">
-    <img src="./cat.png" id="catDecoration" alt="回到登入頁">
-  </a>
+  <img id="previewImage" />
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
@@ -135,107 +60,83 @@
       projectId: "catclassroom-login",
       storageBucket: "catclassroom-login.appspot.com",
       messagingSenderId: "123487233181",
-      appId: "1:123487233181:web:aecc2891dc2d1096962074",
-      measurementId: "G-6C92GYSX3F"
+      appId: "1:123487233181:web:aecc2891dc2d1096962074"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const studentId = sessionStorage.getItem("studentId") || "test";
-    let studentName = "";
-    let studentClass = "";
-    let questionId = "";
-    let releaseTimestamp = 0;
-
-    const studentInfoDiv = document.getElementById("studentInfo");
-    const questionInfoDiv = document.getElementById("questionInfo");
-    const questionContentDiv = document.getElementById("questionContent");
-    const questionBlockDiv = document.getElementById("questionBlock");
-    const uploadStatusDiv = document.getElementById("uploadStatus");
-    const previewImage = document.getElementById("previewImage");
-
-    // 抓學生資料
-    const loginRef = ref(db, `login/${studentId}`);
-    get(loginRef).then(snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        studentName = data.StudentName || "";
-        studentClass = data.StudentClass || "";
-        studentInfoDiv.textContent = `👤 ${studentClass} ${studentName}`;
-      }
-    });
-
-    // 抓題目資料
-    const questionRef = ref(db, `teacher/question`);
-    get(questionRef).then(snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        questionId = data.id || "";
-        releaseTimestamp = data.timestamp || 0;
-        const questionText = data.content || "";
-
-        if (questionId) {
-          questionInfoDiv.textContent = `✏️ 題目：${questionId}`;
-        }
-        if (questionText) {
-          questionContentDiv.textContent = questionText;
-          questionBlockDiv.style.display = "block";
-        }
-      }
-    });
-
-    // 畫布設定
     const canvas = document.getElementById('handwriteCanvas');
     const ctx = canvas.getContext('2d');
     let drawing = false;
 
+    function getCanvasPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      if (e.touches) {
+        return {
+          x: e.touches[0].clientX - rect.left,
+          y: e.touches[0].clientY - rect.top
+        };
+      } else {
+        return {
+          x: e.offsetX,
+          y: e.offsetY
+        };
+      }
+    }
+
     function startDraw(e) {
+      e.preventDefault();
       drawing = true;
+      const pos = getCanvasPos(e);
       ctx.beginPath();
-      ctx.moveTo(e.offsetX, e.offsetY);
+      ctx.moveTo(pos.x, pos.y);
     }
 
     function draw(e) {
       if (!drawing) return;
-      ctx.lineWidth = document.getElementById('lineWidthPicker').value;
+      e.preventDefault();
+      const pos = getCanvasPos(e);
+      ctx.lineWidth = 3;
       ctx.lineCap = 'round';
-      ctx.strokeStyle = document.getElementById('colorPicker').value;
-      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.strokeStyle = '#000';
+      ctx.lineTo(pos.x, pos.y);
       ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
     }
 
-    function endDraw() {
+    function endDraw(e) {
+      e.preventDefault();
       drawing = false;
+      ctx.beginPath();
     }
 
     canvas.addEventListener('mousedown', startDraw);
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', endDraw);
     canvas.addEventListener('mouseout', endDraw);
+    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', endDraw);
+    canvas.addEventListener('touchcancel', endDraw);
 
     window.clearCanvas = function () {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      previewImage.style.display = "none";
+      document.getElementById("previewImage").style.display = "none";
     }
 
-    // 上傳作答
     window.uploadHandwrite = async function () {
-      if (!studentId || !questionId) {
-        alert("❌ 資料不足，無法上傳");
-        return;
-      }
-
+      const studentId = sessionStorage.getItem("studentId") || "guest";
+      const studentName = sessionStorage.getItem("studentName") || "匿名學生";
+      const studentClass = sessionStorage.getItem("studentClass") || "自由繪圖";
+      let questionId = sessionStorage.getItem("questionId");
       const now = Date.now();
-      if (releaseTimestamp && now - releaseTimestamp > 5 * 60 * 1000) {
-        alert("⏰ 作答時間已過，無法上傳");
-        return;
+      if (!questionId) {
+        questionId = `自由繪圖_${now}`;
       }
 
       const imageUrl = canvas.toDataURL("image/png");
-      uploadStatusDiv.style.color = "#007bff";
-      uploadStatusDiv.textContent = "📤 上傳中...請稍候";
-
       const data = {
         studentId,
         studentName,
@@ -246,19 +147,23 @@
         timestamp: now
       };
 
+      const refPath = ref(db, `handwriting/${studentId}/${questionId}`);
+
+      document.getElementById("uploadStatus").style.color = "#555";
+      document.getElementById("uploadStatus").textContent = "📤 上傳中...";
+
       try {
-        await set(ref(db, `handwriting/${studentId}/${questionId}`), data);
-        uploadStatusDiv.style.color = "#28a745";
-        uploadStatusDiv.textContent = "✅ 作答上傳成功！以下是你的畫作預覽：";
-        previewImage.src = imageUrl;
-        previewImage.style.display = "block";
-      } catch (error) {
-        uploadStatusDiv.style.color = "#dc3545";
-        uploadStatusDiv.textContent = "❌ 上傳失敗，請再試一次！";
+        await set(refPath, data);
+        document.getElementById("uploadStatus").style.color = "green";
+        document.getElementById("uploadStatus").textContent = "✅ 上傳成功！";
+        const img = document.getElementById("previewImage");
+        img.src = imageUrl;
+        img.style.display = "block";
+      } catch (e) {
+        document.getElementById("uploadStatus").style.color = "red";
+        document.getElementById("uploadStatus").textContent = "❌ 上傳失敗，請再試一次";
       }
     }
-
   </script>
-
 </body>
 </html>
