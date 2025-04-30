@@ -1,71 +1,85 @@
-# 教師 UI 監控邏輯說明 README（2025）
+# 🐾 白貓工作室 教師端 UI 說明文件（teacher-ui）
 
-本文件說明 `teacher-ui` 中教師畫面如何自動監控學生回應，並即時提示教師有學生作答或陌生人交卷。
-
----
-
-## ✅ 功能概述
-
-- 自動監聽 Firebase `/handwriting/{studentId}/{questionId}` 節點。
-- 若 `studentId` 不在目前教師 UI 畫面中出現（`student-row` 列表內），系統會：
-  - 將其加入名單列表，標記為「陌生」
-  - 在右側應答區跳出紅色訊息框顯示：
-    - 學生 ID
-    - 題號或作答摘要
-  - 畫面出現紅色邊框閃爍 1 秒，提示教師注意
+## 📘 目的
+本模組提供教師即時監控學生作答情況，包含：
+- 自動亮紅燈提示陌生作答者
+- 顯示手寫圖像作答題號資訊
+- 支援 Firebase Realtime Database 串接
 
 ---
 
-## 📡 Firebase 資料結構
+## 🗂 結構說明
+
+| 檔案名稱 | 說明 |
+|--|--|
+| `index.html` | 教師介面主畫面（左：控制區、右：回應區） |
+| `main.js` | 監聽 Firebase `/handwriting/guest` 並即時更新畫面、顯示紅燈與警示 |
+| `style.css` | 定義畫面排版、紅色動畫樣式（blingbling） |
+| `firebase-config.js` | Firebase 連線設定（如已整合入 main.js 可省略） |
+| `cat.png` | 可做為裝飾圖、暫未啟用 QR 圖示 |
+
+---
+
+## 🔥 核心功能
+
+- 監聽：`handwriting/guest/{questionId}`
+- 判斷是否為陌生（`student-row` 中找不到 guest）
+- 加入：紅色名單標籤、response 區顯示作答題號與警告文字
+- 動畫：`.response-box.red` 使用 `@keyframes bling` 動畫閃爍
+
+---
+
+## ✅ 畫面區域說明
+
+### 左側（控制欄）
+- Take Screenshot（未啟用）：預留擷圖功能位
+- QR 圖片區（預設無圖）：可動態產生或留空
+- LNK：複製登入連結
+- ASK：預留教師出題介面入口
+- 學生名單（A–F）＋燈號：預設常駐
+
+### 右側（回應板）
+- 即時學生回答狀況會顯示於此（包括文字與陌生紅框）
+- `.response-board` 區域為訊息顯示主區域
+
+---
+
+## 🧪 測試流程建議
+
+1. 從學生端上傳 `/handwriting/guest/自由繪圖_123` 一筆資料
+2. 教師端會自動新增紅燈名單 `guest（陌生）`
+3. 回應板出現 `⚠️ 陌生學生 guest：手寫圖作答於「自由繪圖_123」`
+4. 邊框閃爍動畫觸發
+
+---
+
+## 📌 注意事項
+
+- 若 QR 圖片沒上傳，不影響功能
+- 若 Firebase 無 `guest` 寫入，畫面不會變化屬正常
+- 建議先開放 Firebase rules 為：
 
 ```json
-handwriting/{studentId}/{questionId} = {
-  imageUrl: "data:image/png;base64,...",
-  questionId: "自由繪圖_12345",
-  timestamp: 1714551100000,
-  studentName: "ZZ"
+{
+  "rules": {
+    "handwriting": {
+      ".read": true,
+      ".write": true
+    }
+  }
 }
 ```
 
-教師端程式從 `handwriting` 第一層監聽新增學生，然後再往下監聽每位學生交了哪些題目。
+---
+
+## ✨ 延伸建議（可後續加入）
+- 自動縮圖預覽手寫圖片
+- guest 自動流水編號（guest1, guest2）
+- 複數 questionId 題號分類顯示
+- 顯示作答時間與秒數紀錄
 
 ---
 
-## 🛠 使用的主程式
+本模組由白貓工作室開發，歡迎在課堂教學、即時互動、AI評量應用中使用。
 
-```js
-onChildAdded(ref(db, "handwriting"), (studentSnap) => {
-  const studentId = studentSnap.key;
-  const studentRef = ref(db, `handwriting/${studentId}`);
-
-  onChildAdded(studentRef, (answerSnap) => {
-    const data = answerSnap.val();
-    const questionId = answerSnap.key;
-
-    // 如果這位 studentId 不在學生名單中...
-    // → 在左邊清單新增紅燈 + 右邊顯示紅色訊息 + 閃爍紅框提示
-  });
-});
-```
-
----
-
-## 🔔 視覺呈現方式
-
-- 使用 `.response-box.red` 顯示陌生回應訊息。
-- 使用 `board.style.border = '3px dashed red'` 實現閃爍邊框效果。
-- 若需強化，也可加入音效提醒、桌面通知、或浮出提示框。
-
----
-
-## 🧠 延伸建議
-
-| 功能 | 說明 |
-|--|--|
-| 預覽圖片縮圖 | 點陌生交卷可浮出 handwrite 圖像預覽框 |
-| 一鍵封鎖 ID | 教師端可點擊封鎖 ID，不再提示 |
-| 日誌備份 | 自動記錄陌生交卷名單與時間至 localStorage or Firebase logs |
-
----
-
-## 🐾 本模組由白貓工作室聯合開發，提供教師高效率即時掌握學生互動動態，協助現場教學反應更加精準與即時。
+🔗 GitHub Pages 示範頁：[teacher-ui/index.html](https://tangcat1125.github.io/catclassroom/teacher-ui/index.html)
