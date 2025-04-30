@@ -22,13 +22,9 @@
     <div class="message-board">
       <h3>📢 系統訊息</h3>
       <div id="systemMessage">等待老師出題中...</div>
-
-      <!-- 💉 血條進度 -->
       <div class="progress-bar">
         <div id="progressFill" class="progress-fill" style="width: 0%">0%</div>
       </div>
-
-      <!-- ✅ 學生回應/留言牆 -->
       <div id="messageList"></div>
     </div>
 
@@ -49,18 +45,24 @@
       </div>
     </div>
 
-    <!-- 💬 公開留言牆 -->
+    <!-- 💬 課程聊天室區 -->
+    <div class="chat-box">
+      <h3>🗨️ 課程聊天室</h3>
+      <div id="chatList"></div>
+      <textarea id="chatInput" placeholder="輸入聊天室訊息..." rows="2" style="width: 100%; margin-top: 10px;"></textarea>
+      <button onclick="sendChatMessage()" class="send-btn" style="margin-top: 8px;">發送訊息</button>
+    </div>
+
+    <!-- 🗨️ 公開留言區 -->
     <div class="help-box" style="margin-top: 30px;">
-      <h3>🗨️ 留言牆（大家都看得到喔）</h3>
+      <h3>💬 留言牆（大家都看得到喔）</h3>
       <textarea id="publicMessage" placeholder="輸入你想說的話..." rows="3" style="width: 100%; padding: 10px;"></textarea>
       <button onclick="sendPublicMessage()" class="send-btn" style="margin-top: 10px;">送出留言</button>
     </div>
   </div>
 
-  <!-- 🐱 固定右下貓貓 -->
   <img src="cat.png" alt="白貓" style="position: fixed; bottom: 8px; right: 8px; width: 60px; opacity: 0.9;" />
 
-  <!-- ✅ Firebase 初始化 -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
   <script>
@@ -77,7 +79,6 @@
     window.db = firebase.database();
   </script>
 
-  <!-- 🧠 功能邏輯 -->
   <script type="module" src="student-ui.js"></script>
 </body>
 </html>
