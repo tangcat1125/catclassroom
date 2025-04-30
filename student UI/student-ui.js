@@ -1,428 +1,294 @@
-// --- START OF FILE student-ui.js (笨蛋也能懂的全面註解修正版) ---
+// --- START OF FILE student-ui.js (v3：加入接收截圖註記任務功能) ---
 
 // -----------------------------------------------------------------------------
 // 步驟 1：引入 Firebase 資料庫需要的工具
 // -----------------------------------------------------------------------------
-// 從 Firebase 的網路服務中，引入我們需要用到的功能：
-// getDatabase: 用來取得資料庫本人
-// ref: 用來指定我們要操作資料庫的哪個「路徑」(像檔案夾路徑)
-// onValue: 用來「持續監聽」某個路徑的資料變化，只要一變就會通知我們
-// set: 用來把資料「寫入」或「覆蓋」到指定路徑
-// push: 用來在某個路徑下「新增」一筆不重複的資料 (像新增留言)
 import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
 // -----------------------------------------------------------------------------
 // 步驟 2：取得已經在 HTML 初始化的 Firebase 資料庫
 // -----------------------------------------------------------------------------
-// 我們假設在 StudentUi_Login.html 裡面已經有用 firebase.initializeApp(firebaseConfig);
-// 並且把資料庫放到了 window.db 這個全域變數裡，這裡直接拿來用。
 const db = window.db;
 
 // -----------------------------------------------------------------------------
 // 步驟 3：取得並顯示學生自己的資訊
 // -----------------------------------------------------------------------------
-// 從瀏覽器的臨時記憶體 (sessionStorage) 讀取之前登入時存的學生資料
 let studentId = sessionStorage.getItem("studentId");
 let studentName = sessionStorage.getItem("studentName");
 let studentClass = sessionStorage.getItem("studentClass");
 
-// 如果沒讀到 (例如直接開這個頁面沒登入)，就給他一個臨時的訪客身份
 if (!studentId) {
-  const now = Date.now(); // 取得現在的時間，弄個獨一無二的 ID
+  const now = Date.now();
   studentId = `guest_${now}`;
   studentName = "訪客";
   studentClass = "自由教室";
-  // 把訪客資訊也存一下，這樣重整頁面才不會又變一個新訪客
   sessionStorage.setItem("studentId", studentId);
   sessionStorage.setItem("studentName", studentName);
   sessionStorage.setItem("studentClass", studentClass);
 }
 
-// 把學生的名字和班級顯示在畫面上對應的 ID 位置
 document.getElementById("student-name").innerText = studentName;
 document.getElementById("student-class").innerText = studentClass;
-
-// 找到畫面上那個紅色指示燈，存起來方便後面用
 const redLight = document.getElementById("red-light");
 
 // -----------------------------------------------------------------------------
 // 步驟 4：設定全班總人數 (會影響進度條百分比)
 // -----------------------------------------------------------------------------
-// **注意：** 這裡的 13 是寫死的，如果班級人數不同，需要修改這裡！
-const TOTAL_STUDENTS = 13;
+const TOTAL_STUDENTS = 13; // **記得修改這裡以符合實際人數**
 
 // -----------------------------------------------------------------------------
 // 步驟 5：持續監聽老師是不是出了新題目
 // -----------------------------------------------------------------------------
-// 指定我們要監聽 Firebase 裡的 "/teacher/currentQuestion" 這個路徑
 const currentQuestionRef = ref(db, "/teacher/currentQuestion");
 
-// 開始用 onValue 持續監聽這個路徑
 onValue(currentQuestionRef, (snapshot) => {
-  // snapshot 就像是 Firebase 在那個時間點拍下的一張照片，裡面有資料
-  const question = snapshot.val(); // .val() 可以把照片裡的資料拿出來
+  const question = snapshot.val();
 
-  // --- A. 收到題目後的處理 ---
-  // 檢查一下收到的資料是不是有問題，或者老師清空題目了
+  // --- A. 清理舊狀態 ---
+  // 無論如何，先隱藏舊的作答區和截圖任務提示
+  document.getElementById("answerPanel").style.display = "none";
+  hideScreenshotTaskPrompt(); // 呼叫新函數隱藏提示
+
   if (!question || !question.type || !question.text) {
     console.log("老師尚未出題或已清除題目。");
     document.getElementById("systemMessage").innerText = "等待老師出題中...";
-    document.getElementById("answerPanel").style.display = "none"; // 隱藏作答區
-    if (redLight) redLight.classList.remove("active"); // 關掉紅燈
-    return; // 結束這次的處理
+    if (redLight) redLight.classList.remove("active");
+    // 清空聊天室 (可選)
+    const chatListDiv = document.getElementById("chatList");
+    if(chatListDiv) chatListDiv.innerHTML = "<p style='color: grey; font-style: italic;'>等待新題目...</p>";
+    return;
   }
 
-  // 從收到的題目資料中，拿出重要的資訊
-  const qid = question.id || question.questionId || `unknown_${Date.now()}`; // 題目獨一無二的 ID
-  const qtype = question.type; // 題目類型 (例如: choice, truefalse, shortanswer, handwrite)
-  const qtext = question.text; // 題目文字內容
+  // --- B. 處理新題目 ---
+  const qid = question.id || question.questionId || `unknown_${Date.now()}`;
+  const qtype = question.type;
+  const qtext = question.text;
 
-  console.log(`收到題目 (ID: ${qid}, Type: ${qtype}): ${qtext}`); // 在控制台印出收到的題目資訊，方便除錯
+  console.log(`收到題目 (ID: ${qid}, Type: ${qtype}): ${qtext}`);
 
-  // 更新畫面上的系統訊息，告訴學生老師出題了
   document.getElementById("systemMessage").innerText = `📢 老師出題：${qtext}`;
-
-  // 把目前的題目 ID 存到瀏覽器臨時記憶體，方便其他地方 (像聊天室) 使用
-  sessionStorage.setItem("questionId", qid);
-
-  // 讓紅色指示燈閃爍，提醒學生
+  sessionStorage.setItem("questionId", qid); // 儲存當前題目 ID
   if (redLight) redLight.classList.add("active");
 
-  // --- B. 清理並準備作答區 ---
-  // 先把之前的作答區隱藏起來，清空裡面的舊題目文字和舊按鈕
-  const answerPanel = document.getElementById("answerPanel");
-  const questionTextDiv = document.getElementById("questionText");
-  const answerButtonsDiv = document.getElementById("answerButtons");
-  answerPanel.style.display = "none"; // 預設隱藏
-  questionTextDiv.innerText = "";
-  answerButtonsDiv.innerHTML = "";
-
-  // --- C. 根據題目類型，顯示不同的作答方式 ---
-  if (qtype === "handwrite") {
-    // 如果是手寫題，等個 0.8 秒後自動打開手寫上傳頁面
+  // --- C. 根據題目類型顯示作答方式 (避開截圖任務) ---
+  // *** 新增條件：如果題目類型是我們約定好的截圖註記標記，就先不做事 ***
+  // *** 等待下面的 screenshotTaskRef 監聽器來處理 ***
+  if (qtype === 'screenshot_annotation') {
+      console.log("收到截圖註記任務標記，等待截圖 URL...");
+      // 不顯示普通作答區，可以在 systemMessage 旁加個提示
+      document.getElementById("systemMessage").innerText += " (請等待老師截圖...)";
+  } else if (qtype === "handwrite") {
+    // 普通手寫題
     setTimeout(() => {
       const url = `handwrite-upload.html?questionId=${qid}&studentId=${studentId}`;
-      window.open(url, "_blank"); // 在新分頁打開
+      window.open(url, "_blank");
     }, 800);
   } else if (qtype === "truefalse" || qtype === "choice") {
-    // 如果是是非題或選擇題，呼叫下面的 showAnswerButtons 函數來顯示按鈕
     showAnswerButtons(qtype, qid, qtext);
   } else if (qtype === "shortanswer") {
-    // 如果是簡答題，呼叫下面的 showShortAnswerBox 函數來顯示輸入框
     showShortAnswerBox(qid, qtext);
+  } else {
+      console.warn("未知的題目類型:", qtype);
+      // 可以顯示一個通用提示
+      showGenericMessage("收到一個新題型，請依老師指示操作。");
   }
 
   // --- D. 載入相關資料 ---
-  // 呼叫下面的 loadAnswers 函數，去讀取目前有多少人回答了這題 (主要是更新進度條)
-  loadAnswers(qid);
-  // 呼叫下面的 listenToChatroom 函數，開始監聽這題專屬的聊天室訊息
-  listenToChatroom(qid);
+  loadAnswers(qid); // 更新進度條
+  listenToChatroom(qid); // 監聽這題的聊天室
+
 });
 
 // -----------------------------------------------------------------------------
-// 步驟 6：監聽並顯示特定題目的聊天室訊息
+// *** 步驟 5.5：新增 - 持續監聽老師是否發送了截圖註記任務 ***
 // -----------------------------------------------------------------------------
-function listenToChatroom(questionId) {
-  const chatListDiv = document.getElementById("chatList"); // 找到顯示聊天內容的區塊
-  const chatroomRef = ref(db, `chat/${questionId}`); // 指定要監聽的路徑 (例如 chat/Q123)
+const screenshotTaskRef = ref(db, '/teacher/currentScreenshotAnnotationTask');
+let lastHandledTaskId = null; // 避免重複處理同一個任務
 
-  // 開始用 onValue 持續監聽這個聊天室路徑
-  onValue(chatroomRef, (snapshot) => {
-    const data = snapshot.val(); // 取得這個聊天室的所有訊息資料
-    chatListDiv.innerHTML = ""; // 先清空舊的聊天內容
+onValue(screenshotTaskRef, (snapshot) => {
+    const taskData = snapshot.val();
 
-    // 如果沒有訊息，就不用做了
-    if (!data) {
-      chatListDiv.innerHTML = "<p style='color: grey; font-style: italic;'>目前沒有聊天訊息...</p>";
-      return;
-    }
+    if (taskData && taskData.imageUrl && taskData.taskId) {
+        // 檢查是否是新的任務 ID，避免因為其他資料變動而重複觸發
+        if (taskData.taskId !== lastHandledTaskId) {
+            lastHandledTaskId = taskData.taskId; // 記錄已處理的 ID
+            console.log("收到新的截圖註記任務！Task ID:", taskData.taskId, "Image URL:", taskData.imageUrl);
 
-    // 把每一條訊息都拿出來，顯示在畫面上
-    Object.values(data).forEach((msg) => {
-      const div = document.createElement("div"); // 創建一個新的 div 元素來放訊息
-      div.className = "chat-item"; // 給它一個 CSS class 方便美化
+            // 在畫面上顯示提示，讓學生點擊以開啟手寫頁面
+            showScreenshotTaskPrompt(taskData.imageUrl, taskData.taskId);
 
-      // 根據訊息類型 (是文字還是其他?) 來決定怎麼顯示
-      if (msg.type === "text") {
-        // 如果是文字，檢查有沒有包含 "@"，有的話給個背景色提醒
-        const isMention = msg.text.includes("@");
-        div.innerHTML = `💬 <strong>${msg.from || '匿名'}</strong>：<span class="chat-text"${isMention ? " style='background-color: #fff9c4; padding: 1px 3px; border-radius: 3px;'" : ""}>${escapeHtml(msg.text)}</span>`; // escapeHtml 防止 XSS
-      } else {
-        // 如果不是文字 (未來可能傳圖片或其他)，就簡單顯示 JSON 字串
-        div.innerHTML = `📎 <strong>${msg.from || '匿名'}</strong>：分享了一個非文字內容`;
-        // console.log("收到非文字訊息:", msg); // 在控制台顯示詳細內容
-      }
+            // 收到任務時，也可以讓紅燈閃爍或給其他視覺提示
+            if (redLight) redLight.classList.add("active");
+            // 可以覆蓋掉 systemMessage 的內容
+            document.getElementById("systemMessage").innerHTML = `
+                老師發送了一張截圖，請點擊下方按鈕進行註記！
+                <button class="send-btn highlight-blink" onclick="openHandwriteWithBackground('${encodeURIComponent(taskData.imageUrl)}', '${taskData.taskId}')" style="margin-top: 10px; background-color: #ff7043;">
+                    ✏️ 前往註記
+                </button>
+            `;
+             // 隱藏可能存在的普通作答區
+             document.getElementById("answerPanel").style.display = "none";
 
-      chatListDiv.appendChild(div); // 把這條訊息加到聊天區塊的尾巴
-    });
-
-    // 自動捲動到聊天室底部，讓使用者看到最新訊息
-    chatListDiv.scrollTop = chatListDiv.scrollHeight;
-  });
-}
-
-// 小工具：用來跳脫 HTML 特殊字元，避免 XSS 攻擊
-function escapeHtml(unsafe) {
-    if (!unsafe) return "";
-    return unsafe
-         .replace(/&/g, "&")
-         .replace(/</g, "<")
-         .replace(/>/g, ">")
-         .replace(/"/g, """)
-         .replace(/'/g, "'");
- }
-
-// -----------------------------------------------------------------------------
-// 步驟 7：讓學生可以發送聊天室訊息
-// -----------------------------------------------------------------------------
-// 這個函數會被 HTML 裡的「送出聊天室訊息」按鈕呼叫 (onclick)
-// 所以必須掛在 window 底下，變成全域函數
-window.sendChatMessage = function () {
-  // 從瀏覽器臨時記憶體讀取目前是哪個題目 ID，如果沒有就用 'unknown'
-  const questionId = sessionStorage.getItem("questionId") || "unknown";
-  const chatInput = document.getElementById("chatInput"); // 找到輸入框
-  const text = chatInput.value.trim(); // 取得輸入的文字，並去掉頭尾空白
-
-  // 如果沒輸入文字，跳個提醒，然後結束
-  if (!text) {
-    alert("請輸入訊息內容！");
-    return;
-  }
-
-  // 準備要存到 Firebase 的訊息資料
-  const data = {
-    from: studentName,       // 發送者姓名
-    studentId: studentId,    // 發送者 ID (可選，方便追蹤)
-    type: "text",            // 訊息類型是文字
-    text: text,              // 訊息內容
-    time: new Date().toISOString() // 記錄發送時間
-  };
-
-  // 指定要存到哪個聊天室路徑下
-  const chatRef = ref(db, `chat/${questionId}`);
-
-  // 用 push 把這筆新訊息加到指定的聊天室路徑下
-  push(chatRef, data)
-    .then(() => {
-      // 如果成功送出...
-      console.log("聊天訊息已送出:", data);
-      chatInput.value = ""; // 清空輸入框
-    })
-    .catch((err) => {
-      // 如果送出失敗...
-      console.error("❌ 發送聊天訊息失敗：", err);
-      alert("❌ 發送失敗：" + err.message); // 跳提醒告訴使用者
-    });
-};
-
-// -----------------------------------------------------------------------------
-// 步驟 8：根據題目類型，顯示對應的作答按鈕 (是非/選擇)
-// -----------------------------------------------------------------------------
-function showAnswerButtons(type, questionId, text) {
-  const panel = document.getElementById("answerPanel");       // 找到整個作答區塊
-  const textDiv = document.getElementById("questionText");    // 找到顯示題目文字的區塊
-  const buttonsDiv = document.getElementById("answerButtons"); // 找到放按鈕的區塊
-
-  console.log("顯示作答按鈕:", type);
-
-  // 把作答區塊顯示出來
-  panel.style.display = "block";
-  // 把題目文字放進去
-  textDiv.innerText = text;
-  // 清空舊的按鈕 (如果有的話)
-  buttonsDiv.innerHTML = "";
-
-  // 決定按鈕上有哪些選項
-  const options = (type === "truefalse") ? ["是", "否"] : ["A", "B", "C", "D"];
-
-  // 為每一個選項創建一個按鈕
-  options.forEach(opt => {
-    const btn = document.createElement("button"); // 創建按鈕元素
-    btn.className = "send-btn"; // 給按鈕加上 CSS class
-    btn.innerText = opt; // 設定按鈕上顯示的文字
-    // 設定按鈕被點擊時要執行的動作：呼叫下面的 submitAnswer 函數
-    btn.onclick = () => submitAnswer(questionId, opt);
-    buttonsDiv.appendChild(btn); // 把按鈕加到畫面上
-  });
-}
-
-// -----------------------------------------------------------------------------
-// 步驟 9：根據題目類型，顯示對應的作答輸入框 (簡答)
-// -----------------------------------------------------------------------------
-function showShortAnswerBox(questionId, questionText) {
-  const panel = document.getElementById("answerPanel");
-  const textDiv = document.getElementById("questionText");
-  const buttonsDiv = document.getElementById("answerButtons"); // 雖然叫 buttonsDiv，但這裡放輸入框
-
-  console.log("顯示簡答輸入框");
-
-  panel.style.display = "block"; // 顯示作答區
-  textDiv.innerText = questionText; // 顯示題目文字
-
-  // 直接用 HTML 字串產生輸入框和送出按鈕
-  buttonsDiv.innerHTML = `
-    <textarea id="shortAnswerInput" rows="3" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-size: 16px;" placeholder="請在此輸入你的答案..."></textarea>
-    <button class="send-btn" style="margin-top:10px;" onclick="submitShortAnswer('${questionId}')">送出簡答</button>
-  `;
-  // 讓輸入框自動獲得焦點，方便學生直接打字
-  setTimeout(() => {
-      const textarea = document.getElementById('shortAnswerInput');
-      if(textarea) textarea.focus();
-  }, 100); // 短暫延遲確保元素已渲染
-}
-
-// -----------------------------------------------------------------------------
-// 步驟 10：處理簡答題的送出
-// -----------------------------------------------------------------------------
-// 這個函數會被簡答題的「送出簡答」按鈕呼叫 (onclick)
-// 所以也要掛在 window 底下
-window.submitShortAnswer = function (qid) {
-  const input = document.getElementById("shortAnswerInput"); // 找到簡答輸入框
-  const answer = input.value.trim(); // 取得輸入的答案
-
-  // 檢查是否為空
-  if (!answer) {
-    alert("請輸入內容！");
-    return;
-  }
-  // 呼叫通用的 submitAnswer 函數來送出
-  submitAnswer(qid, answer);
-};
-
-// -----------------------------------------------------------------------------
-// 步驟 11：將學生的答案送到 Firebase 儲存
-// -----------------------------------------------------------------------------
-function submitAnswer(questionId, answerText) {
-  console.log(`準備送出答案 - QID: ${questionId}, 答案: ${answerText}`);
-
-  // 準備要存到 Firebase 的答案資料
-  const data = {
-    studentId: studentId,     // 學生 ID
-    name: studentName,        // 學生姓名
-    answer: answerText,       // 學生回答的內容
-    questionId: questionId,   // 對應的題目 ID
-    time: new Date().toISOString() // 記錄回答時間
-  };
-
-  // 指定要存到哪個路徑 (例如 answers/S01/Q123)
-  const answerRef = ref(db, `answers/${studentId}/${questionId}`);
-
-  // 用 set 把這筆答案資料寫入或覆蓋到指定路徑
-  set(answerRef, data)
-    .then(() => {
-      // 如果成功送出...
-      console.log("答案已成功送出！");
-      alert("✅ 答案已送出！"); // 跳提醒告訴學生
-      document.getElementById("answerPanel").style.display = "none"; // 把作答區隱藏起來
-      if (redLight) redLight.classList.remove("active"); // 關掉紅燈，表示已作答
-    })
-    .catch((err) => {
-      // 如果送出失敗...
-      console.error("❌ 送出答案失敗：", err);
-      alert("❌ 發送失敗：" + err.message); // 跳提醒告訴學生
-    });
-}
-
-// -----------------------------------------------------------------------------
-// 步驟 12：讀取全班對目前題目的作答狀況 (只更新進度條)
-// -----------------------------------------------------------------------------
-function loadAnswers(qid) {
-  const allAnswersRef = ref(db, "answers"); // 指定監聽整個 /answers 路徑
-  const progressBarFill = document.getElementById("progressFill"); // 找到進度條的填滿部分
-
-  // **重要：** 這個函數現在只負責更新進度條，不再把每個人的答案顯示在 messageList！
-
-  // 開始用 onValue 持續監聽 /answers 路徑
-  onValue(allAnswersRef, (snapshot) => {
-    const allAnswersData = snapshot.val(); // 取得所有學生的答案資料
-    let answeredCount = 0; // 計算有多少人回答了 *這一題*
-
-    if (allAnswersData) {
-      // 遍歷所有學生 ID
-      Object.keys(allAnswersData).forEach(sId => {
-        // 檢查這個學生底下，是否有針對 *目前題目 qid* 的作答紀錄
-        if (allAnswersData[sId] && allAnswersData[sId][qid]) {
-          answeredCount++; // 如果有，計數器加 1
+        } else {
+             console.log("收到的截圖任務 ID 與上次相同，忽略。");
         }
-      });
-    }
-
-    // 計算完成百分比 (要處理總人數是 0 的情況)
-    const percent = TOTAL_STUDENTS > 0 ? Math.round((answeredCount / TOTAL_STUDENTS) * 100) : 0;
-
-    // 更新進度條的寬度和顯示文字
-    if (progressBarFill) { // 檢查一下元素是否存在，避免錯誤
-      progressBarFill.style.width = `${percent}%`;
-      progressBarFill.innerText = `${answeredCount} / ${TOTAL_STUDENTS}`;
-      console.log(`進度更新 (QID: ${qid}): ${answeredCount} / ${TOTAL_STUDENTS} (${percent}%)`);
     } else {
-      console.warn("警告：找不到進度條元素 #progressFill");
+        console.log("老師尚未發送截圖任務或已清除。");
+        hideScreenshotTaskPrompt(); // 隱藏提示
+        // 如果老師清除了任務，可以考慮重設 systemMessage
+        if (lastHandledTaskId !== null) { // 只有在之前有任務時才重設
+             // document.getElementById("systemMessage").innerText = "老師已清除截圖任務，等待新指令...";
+             lastHandledTaskId = null; // 重設記錄
+        }
+
     }
-  });
+});
+
+/**
+ * 新增：在特定位置顯示 "前往註記" 的提示按鈕
+ * @param {string} encodedImageUrl - 編碼後的圖片 URL
+ * @param {string} taskId - 任務 ID
+ */
+function showScreenshotTaskPrompt(encodedImageUrl, taskId) {
+    // 我們可以利用原本放作答按鈕的區域來顯示提示
+    const panel = document.getElementById("answerPanel");
+    const textDiv = document.getElementById("questionText");
+    const buttonsDiv = document.getElementById("answerButtons");
+
+    panel.style.display = "block"; // 顯示這個區塊
+    textDiv.innerHTML = "<strong>老師發送了截圖，請點擊下方按鈕開始註記：</strong>"; // 提示文字
+    buttonsDiv.innerHTML = `
+        <button class="send-btn highlight-blink" onclick="openHandwriteWithBackground('${encodedImageUrl}', '${taskId}')" style="background-color: #f57c00; font-size: 18px; padding: 12px 25px;">
+           🚀 前往註記畫面
+        </button>
+    `;
+    // 也可以在這裡加一個預覽小圖 (可選)
+    // buttonsDiv.innerHTML += `<img src="${decodeURIComponent(encodedImageUrl)}" style="max-width: 100px; display: block; margin-top: 10px;">`;
+}
+
+/**
+ * 新增：隱藏 "前往註記" 的提示 (如果老師清除了任務)
+ */
+function hideScreenshotTaskPrompt() {
+    // 簡單地隱藏 answerPanel 即可
+    // document.getElementById("answerPanel").style.display = "none";
+    // 或者更精確地只清除內容
+    const panel = document.getElementById("answerPanel");
+     if (panel.querySelector('.highlight-blink')) { // 檢查裡面是否有註記按鈕
+         panel.style.display = "none";
+         document.getElementById("questionText").innerHTML = "";
+         document.getElementById("answerButtons").innerHTML = "";
+     }
+}
+
+/**
+ * 新增：打開手寫頁面，並將背景圖 URL 和任務 ID 作為參數傳遞
+ * @param {string} encodedImageUrl - 編碼後的圖片 URL
+ * @param {string} taskId - 任務 ID
+ */
+window.openHandwriteWithBackground = function(encodedImageUrl, taskId) {
+    // 組合目標 URL，加入 backgroundUrl 和 taskId (或 questionId)
+    // taskId 可以用來當作這次手寫的 questionId
+    const url = `handwrite-upload.html?backgroundUrl=${encodedImageUrl}&questionId=${taskId}&studentId=${studentId}`;
+    console.log("準備開啟手寫頁面，URL:", url);
+    window.open(url, '_blank');
+
+    // 點擊後可以隱藏提示，或顯示"已開啟"
+    hideScreenshotTaskPrompt();
+    document.getElementById("systemMessage").innerText = "已開啟註記畫面，請在新分頁完成作答。";
+     if (redLight) redLight.classList.remove("active"); // 點擊後關閉紅燈
+
 }
 
 // -----------------------------------------------------------------------------
-// 步驟 13：處理求救按鈕和表單的顯示/隱藏
+// 步驟 6 - 14 (監聽聊天室、發送聊天、顯示按鈕/輸入框、送出答案、更新進度條、求救)
+// **維持我們在 v2 版本 (笨蛋也能懂的註解版) 的內容即可，這裡不再重複貼出**
 // -----------------------------------------------------------------------------
-const helpBtn = document.getElementById("help-button");
-const helpForm = document.getElementById("helpForm"); // 找到求救表單區塊
 
-// 如果畫面上找得到求救按鈕
-if (helpBtn) {
-  // 幫按鈕加上點擊事件監聽
-  helpBtn.addEventListener("click", () => {
-    // 切換求救表單的顯示狀態 (如果原本是隱藏就顯示，反之亦然)
-    helpForm.style.display = helpForm.style.display === "none" ? "block" : "none";
-  });
-} else {
-  console.warn("警告：找不到求救按鈕 #help-button");
-}
-
-
-// -----------------------------------------------------------------------------
-// 步驟 14：處理發送求救訊息
-// -----------------------------------------------------------------------------
-// 這個函數會被求救表單裡的「發送給老師」按鈕呼叫 (onclick)
-// 所以也要掛在 window 底下
-window.sendHelp = function () {
-  const helpTextInput = document.getElementById("helpText"); // 找到求救訊息輸入框
-  const msg = helpTextInput.value.trim(); // 取得輸入的訊息
-
-  // 檢查是否為空
-  if (!msg) {
-    alert("請輸入你遇到的問題！");
-    return;
-  }
-
-  // 準備要存到 Firebase 的求救資料
-  const data = {
-    message: msg,             // 求救內容
-    from: studentName,        // 學生姓名
-    studentId: studentId,     // 學生 ID
-    class: studentClass,      // 學生班級
-    time: new Date().toISOString() // 求救時間
-  };
-
-  // 指定要存到哪個路徑 (例如 help/S01)
-  // 注意：這裡用 set，所以同一個學生再次求救會覆蓋舊的！
-  // 如果希望保留歷史紀錄，應該用 push 到 help 路徑下，或 push 到 help/studentId 下
-  const helpRef = ref(db, `help/${studentId}`);
-
-  // 用 set 把這筆求救資料寫入或覆蓋到指定路徑
-  set(helpRef, data)
-    .then(() => {
-      // 如果成功送出...
-      console.log("求救訊息已送出！");
-      document.getElementById("helpStatus").style.display = "block"; // 顯示「已傳送」提示
-      helpTextInput.value = ""; // 清空輸入框
-      helpForm.style.display = "none"; // 送出後自動隱藏表單
-      alert("✅ 求救訊息已發送給老師！");
-    })
-    .catch((err) => {
-      // 如果送出失敗...
-      console.error("❌ 發送求救失敗：", err);
-      alert("❌ 求救失敗：" + err.message); // 跳提醒告訴學生
+// (假設以下函數都已存在且功能正確)
+function listenToChatroom(questionId) { /* ... v2 版本內容 ... */
+    const chatListDiv = document.getElementById("chatList");
+    const chatroomRef = ref(db, `chat/${questionId}`);
+    onValue(chatroomRef, (snapshot) => {
+        const data = snapshot.val(); chatListDiv.innerHTML = "";
+        if (!data) { chatListDiv.innerHTML = "<p style='color: grey; font-style: italic;'>目前沒有聊天訊息...</p>"; return; }
+        Object.values(data).forEach((msg) => {
+            const div = document.createElement("div"); div.className = "chat-item";
+            if (msg.type === "text") {
+                const isMention = msg.text.includes("@");
+                div.innerHTML = `💬 <strong>${msg.from || '匿名'}</strong>：<span class="chat-text"${isMention ? " style='background-color: #fff9c4; padding: 1px 3px; border-radius: 3px;'" : ""}>${escapeHtml(msg.text)}</span>`;
+            } else { div.innerHTML = `📎 <strong>${msg.from || '匿名'}</strong>：分享了一個非文字內容`; }
+            chatListDiv.appendChild(div);
+        });
+        chatListDiv.scrollTop = chatListDiv.scrollHeight;
     });
+}
+function escapeHtml(unsafe) { if (!unsafe) return ""; return unsafe.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """).replace(/'/g, "'"); }
+window.sendChatMessage = function () { /* ... v2 版本內容 ... */
+    const questionId = sessionStorage.getItem("questionId") || "unknown";
+    const chatInput = document.getElementById("chatInput");
+    const text = chatInput.value.trim();
+    if (!text) { alert("請輸入訊息內容！"); return; }
+    const data = { from: studentName, studentId: studentId, type: "text", text: text, time: new Date().toISOString() };
+    const chatRef = ref(db, `chat/${questionId}`);
+    push(chatRef, data).then(() => { console.log("聊天訊息已送出"); chatInput.value = ""; }).catch((err) => { console.error("發送聊天失敗：", err); alert("❌ 發送失敗：" + err.message); });
+};
+function showAnswerButtons(type, questionId, text) { /* ... v2 版本內容 ... */
+    const panel = document.getElementById("answerPanel"); const textDiv = document.getElementById("questionText"); const buttonsDiv = document.getElementById("answerButtons");
+    console.log("顯示作答按鈕:", type); panel.style.display = "block"; textDiv.innerText = text; buttonsDiv.innerHTML = "";
+    const options = (type === "truefalse") ? ["是", "否"] : ["A", "B", "C", "D"];
+    options.forEach(opt => { const btn = document.createElement("button"); btn.className = "send-btn"; btn.innerText = opt; btn.onclick = () => submitAnswer(questionId, opt); buttonsDiv.appendChild(btn); });
+}
+function showShortAnswerBox(questionId, questionText) { /* ... v2 版本內容 ... */
+    const panel = document.getElementById("answerPanel"); const textDiv = document.getElementById("questionText"); const buttonsDiv = document.getElementById("answerButtons");
+    console.log("顯示簡答輸入框"); panel.style.display = "block"; textDiv.innerText = questionText;
+    buttonsDiv.innerHTML = `<textarea id="shortAnswerInput" rows="3" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; font-size: 16px;" placeholder="請在此輸入你的答案..."></textarea><button class="send-btn" style="margin-top:10px;" onclick="submitShortAnswer('${questionId}')">送出簡答</button>`;
+    setTimeout(() => { const textarea = document.getElementById('shortAnswerInput'); if(textarea) textarea.focus(); }, 100);
+}
+function showGenericMessage(message) { // 顯示通用訊息
+    const panel = document.getElementById("answerPanel"); const textDiv = document.getElementById("questionText"); const buttonsDiv = document.getElementById("answerButtons");
+    panel.style.display = "block"; textDiv.innerText = message; buttonsDiv.innerHTML = "";
+}
+window.submitShortAnswer = function (qid) { /* ... v2 版本內容 ... */
+    const input = document.getElementById("shortAnswerInput"); const answer = input.value.trim();
+    if (!answer) { alert("請輸入內容！"); return; } submitAnswer(qid, answer);
+};
+function submitAnswer(questionId, answerText) { /* ... v2 版本內容 ... */
+    console.log(`準備送出答案 - QID: ${questionId}, 答案: ${answerText}`);
+    const data = { studentId: studentId, name: studentName, answer: answerText, questionId: questionId, time: new Date().toISOString() };
+    const answerRef = ref(db, `answers/${studentId}/${questionId}`);
+    set(answerRef, data).then(() => { console.log("答案已成功送出！"); alert("✅ 答案已送出！"); document.getElementById("answerPanel").style.display = "none"; if (redLight) redLight.classList.remove("active"); }).catch((err) => { console.error("送出答案失敗：", err); alert("❌ 發送失敗：" + err.message); });
+}
+function loadAnswers(qid) { /* ... v2 版本內容 (只更新進度條) ... */
+    const allAnswersRef = ref(db, "answers"); const progressBarFill = document.getElementById("progressFill");
+    onValue(allAnswersRef, (snapshot) => {
+        const allAnswersData = snapshot.val(); let answeredCount = 0;
+        if (allAnswersData) { Object.keys(allAnswersData).forEach(sId => { if (allAnswersData[sId]?.[qid]) answeredCount++; }); }
+        const percent = TOTAL_STUDENTS > 0 ? Math.round((answeredCount / TOTAL_STUDENTS) * 100) : 0;
+        if (progressBarFill) { progressBarFill.style.width = `${percent}%`; progressBarFill.innerText = `${answeredCount} / ${TOTAL_STUDENTS}`; console.log(`進度更新 (QID: ${qid}): ${answeredCount}/${TOTAL_STUDENTS} (${percent}%)`); }
+        else { console.warn("警告：找不到進度條元素 #progressFill"); }
+    });
+}
+const helpBtn = document.getElementById("help-button"); const helpForm = document.getElementById("helpForm");
+if (helpBtn) { helpBtn.addEventListener("click", () => { helpForm.style.display = helpForm.style.display === "none" ? "block" : "none"; }); }
+else { console.warn("警告：找不到求救按鈕 #help-button"); }
+window.sendHelp = function () { /* ... v2 版本內容 ... */
+    const helpTextInput = document.getElementById("helpText"); const msg = helpTextInput.value.trim();
+    if (!msg) { alert("請輸入你遇到的問題！"); return; }
+    const data = { message: msg, from: studentName, studentId: studentId, class: studentClass, time: new Date().toISOString() };
+    const helpRef = ref(db, `help/${studentId}`);
+    set(helpRef, data).then(() => { console.log("求救訊息已送出"); document.getElementById("helpStatus").style.display = "block"; helpTextInput.value = ""; helpForm.style.display = "none"; alert("✅ 求救訊息已發送給老師！"); }).catch((err) => { console.error("發送求救失敗：", err); alert("❌ 求救失敗：" + err.message); });
 };
 
-// --- END OF FILE student-ui.js (笨蛋也能懂的全面註解修正版) ---
+// 確保 CSS 中有 .highlight-blink 樣式
+/*
+@keyframes blink {
+  50% { opacity: 0.6; }
+}
+.highlight-blink {
+  animation: blink 1s linear infinite;
+}
+*/
+
+
+// --- END OF FILE student-ui.js (v3：加入接收截圖註記任務功能) ---
