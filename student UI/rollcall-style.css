@@ -1,64 +1,72 @@
+/* ✅ 對應新版 rollcall.html 的樣式設定 */
+
 body {
   font-family: "Microsoft JhengHei", sans-serif;
-  background-color: #f3f6fa;
-  padding: 40px 16px;
+  background-color: #e3f2fd;
   margin: 0;
+  padding: 0;
 }
 
 .container {
-  max-width: 480px;
-  margin: auto;
+  max-width: 420px;
+  margin: 80px auto;
   background-color: #fff;
-  padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 32px 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
-  font-size: 26px;
-  color: #3366cc;
   text-align: center;
+  color: #0d47a1;
   margin-bottom: 24px;
 }
 
 label {
   display: block;
+  font-size: 16px;
   margin-top: 16px;
-  font-size: 18px;
   color: #333;
 }
 
 input,
 select {
   width: 100%;
-  padding: 14px;
+  padding: 12px;
+  margin-top: 6px;
   font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 8px;
-  margin-top: 6px;
   box-sizing: border-box;
 }
 
-button.btn {
+button {
   width: 100%;
-  margin-top: 24px;
-  padding: 16px;
+  margin-top: 28px;
+  padding: 14px;
   font-size: 18px;
-  background-color: #3366cc;
+  background-color: #42a5f5;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
 }
 
-button.btn:hover {
-  background-color: #284e9e;
+button:hover {
+  background-color: #1976d2;
 }
 
 .note {
-  margin-top: 18px;
-  font-size: 16px;
-  color: green;
   text-align: center;
+  margin-top: 16px;
+  font-size: 15px;
+  color: green;
+}
+
+.corner-cat {
+  position: fixed;
+  bottom: 8px;
+  right: 8px;
+  width: 60px;
+  opacity: 0.9;
 }
