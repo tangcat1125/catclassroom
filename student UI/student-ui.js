@@ -1,4 +1,4 @@
-// ✅ 白貓教室學生互動邏輯 student-ui.js（進階聊天室分段顯示）
+// ✅ 修正版 student-ui.js：從 chat/{questionId} 讀取聊天室資料
 import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
 const db = window.db;
@@ -51,48 +51,30 @@ onValue(currentQuestionRef, (snapshot) => {
   }
 
   loadAnswers(qid);
-  listenToChatroom();
+  listenToChatroom(qid);
 });
 
-function listenToChatroom() {
+function listenToChatroom(questionId) {
   const list = document.getElementById("chatList");
-  const chatroomRef = ref(db, "chatroom");
+  const chatroomRef = ref(db, `chat/${questionId}`);
+
   onValue(chatroomRef, (snapshot) => {
     const data = snapshot.val();
     list.innerHTML = "";
     if (!data) return;
 
-    // 依照日期分類
-    const grouped = {};
     Object.values(data).forEach((msg) => {
-      const day = msg.time ? msg.time.slice(0, 10) : "unknown";
-      if (!grouped[day]) grouped[day] = [];
-      grouped[day].push(msg);
-    });
+      const div = document.createElement("div");
+      div.className = "chat-item";
 
-    // 建立分段區塊
-    Object.keys(grouped).sort().forEach((day) => {
-      const block = document.createElement("div");
-      block.className = "chat-day-block";
-      block.innerHTML = `<h4>🗓️ ${day}</h4>`;
-      grouped[day].forEach((msg) => {
-        const div = document.createElement("div");
-        div.className = "chat-item";
+      if (msg.type === "text") {
+        const isMention = msg.text.includes("@");
+        div.innerHTML = `💬 <strong>${msg.from}</strong>：<span${isMention ? " style='background: #ffecb3'" : ""}>${msg.text}</span>`;
+      } else {
+        div.innerHTML = `📎 <strong>${msg.from}</strong>：${JSON.stringify(msg)}`;
+      }
 
-        if (msg.type === "link") {
-          div.innerHTML = `🔗 <strong>${msg.from}</strong>：<a href="${msg.url}" target="_blank">${msg.title}</a>`;
-        } else if (msg.type === "image") {
-          div.innerHTML = `🖼️ <strong>${msg.from}</strong>：<img src="${msg.url}" style="max-width: 200px">`;
-        } else if (msg.type === "text") {
-          const highlight = msg.text.includes("@") ? " style='background: #ffecb3'" : "";
-          div.innerHTML = `💬 <strong>${msg.from}</strong>：<span${highlight}>${msg.text}</span>`;
-        } else {
-          div.innerHTML = `📎 <strong>${msg.from}</strong>：${msg.content || JSON.stringify(msg)}`;
-        }
-
-        block.appendChild(div);
-      });
-      list.appendChild(block);
+      list.appendChild(div);
     });
   });
 }
@@ -210,39 +192,3 @@ window.sendHelp = function () {
       alert("❌ 求救失敗：" + err.message);
     });
 };
-
-window.sendPublicMessage = async function () {
-  const msg = document.getElementById("publicMessage").value.trim();
-  if (!msg) return alert("請輸入訊息！");
-
-  const message = {
-    from: studentName,
-    time: new Date().toISOString(),
-    content: msg
-  };
-
-  const dbRef = ref(db, "messages");
-  await push(dbRef, message);
-  document.getElementById("publicMessage").value = "";
-};
-
-const messagesRef = ref(db, "messages");
-onValue(messagesRef, (snapshot) => {
-  const list = snapshot.val();
-  if (!list) return;
-  for (const key in list) {
-    const msg = list[key];
-    const div = document.createElement("div");
-    div.className = "message-bubble";
-    div.innerHTML = `
-      <div class="meta">💬 ${msg.from} @ ${formatTime(msg.time)}</div>
-      <div>${msg.content}</div>
-    `;
-    document.getElementById("messageList").appendChild(div);
-  }
-});
-
-function formatTime(isoStr) {
-  const d = new Date(isoStr);
-  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
