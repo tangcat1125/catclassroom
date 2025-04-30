@@ -1,39 +1,88 @@
-/* style.css：白貓工作室 教師端樣式表 */
+/* 白貓工作室 教師端 style.css（BlingBling 紅燈特效版） */
 
-/* 整體頁面設定 */
 body {
-  font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+  font-family: "Noto Sans TC", sans-serif;
   margin: 0;
-  padding: 0;
-  display: flex; /* 左右兩邊排版 */
-  background-color: #f5f5f5;
+  background: #f4f4f4;
 }
 
-/* 左側操作區 */
-.control-panel {
-  width: 280px;
-  background-color: white;
-  padding: 20px;
-  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
+.container {
+  display: flex;
+  flex-direction: row;
   height: 100vh;
+}
+
+.left {
+  width: 300px;
+  padding: 1rem;
+  background-color: #fff;
+  border-right: 2px solid #ccc;
+}
+
+.right {
+  flex: 1;
+  padding: 1rem;
   overflow-y: auto;
-  box-sizing: border-box;
+  background-color: #fafafa;
 }
 
-/* 標題樣式 */
-.control-panel h2 {
-  font-size: 20px;
-  color: #3366cc;
-  margin-bottom: 16px;
+.student-status-list {
+  margin-top: 1rem;
 }
 
-/* 按鈕樣式 */
+.student-row {
+  padding: 4px;
+  font-weight: bold;
+}
+
+.student-row span {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+span.blue { background-color: #2196f3; }
+span.red { background-color: #e53935; }
+span.green { background-color: #43a047; }
+
+.response-board {
+  border: 2px solid #ddd;
+  padding: 1rem;
+  min-height: 200px;
+  transition: border 0.3s ease;
+}
+
+.response-box {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 5px;
+  background-color: #e0e0e0;
+  font-weight: bold;
+}
+
+.response-box.green {
+  background-color: #c8e6c9;
+  color: #2e7d32;
+}
+
+.response-box.red {
+  background-color: #b71c1c;
+  color: white;
+  animation: bling 1s ease-out;
+}
+
+@keyframes bling {
+  0% { transform: scale(1); background-color: #f44336; }
+  50% { transform: scale(1.05); background-color: #d32f2f; }
+  100% { transform: scale(1); background-color: #b71c1c; }
+}
+
 button {
-  width: 100%;
-  padding: 10px;
-  margin: 8px 0;
-  font-size: 16px;
-  background-color: #3366cc;
+  padding: 0.5rem 1rem;
+  margin: 0.25rem;
+  background-color: #1976d2;
   color: white;
   border: none;
   border-radius: 6px;
@@ -41,87 +90,14 @@ button {
 }
 
 button:hover {
-  background-color: #2852a0;
+  background-color: #0d47a1;
 }
 
-/* QR區域 */
-#qrcode-area {
-  text-align: center;
-  margin: 10px 0;
-}
-
-/* LINK輸入框 */
-#login-link {
+input[type="text"] {
   width: 100%;
-  padding: 8px;
-  margin: 5px 0;
-  font-size: 14px;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
   border: 1px solid #ccc;
   border-radius: 4px;
-}
-
-/* 學生出席狀態區（可捲動） */
-.student-status-list {
-  margin-top: 16px;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background-color: #fafafa;
-  padding: 10px;
-}
-
-/* 每位學生狀態列 */
-.student-row {
-  display: flex;
-  align-items: center;
-  margin: 6px 0;
-  font-size: 16px;
-}
-
-/* 狀態圓點 */
-.student-row span {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  margin-right: 10px;
-}
-
-.red {
-  background-color: red;
-}
-
-.blue {
-  background-color: #3366cc;
-}
-
-.green {
-  background-color: green;
-}
-
-/* 右側：跑馬燈應答板 */
-.response-board {
-  flex-grow: 1;
-  padding: 20px;
-  background-color: #f0f8ff;
-  overflow-y: auto;
-  height: 100vh;
-}
-
-/* 回應框 */
-.response-box {
-  margin-bottom: 12px;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 16px;
-  color: white;
-}
-
-.response-box.green {
-  background-color: #2e8b57;
-}
-
-.response-box.brown {
-  background-color: #8b4513;
 }
