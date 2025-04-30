@@ -85,44 +85,6 @@
     <script type="module" src="student-ui.js"></script>
 
     <script>
-      function listenToChatroom() {
-        const list = document.getElementById("chatList");
-        const chatroomRef = window.db.ref("chatroom");
-
-        chatroomRef.on("value", (snapshot) => {
-          const data = snapshot.val();
-          list.innerHTML = "";
-          if (!data) return;
-
-          const today = new Date().toISOString().slice(0, 10);
-          const messages = Object.values(data).filter(msg => msg.time && msg.time.startsWith(today));
-
-          const block = document.createElement("div");
-          block.className = "chat-day-block";
-          block.innerHTML = `<h4>📅 今日聊天室訊息</h4>`;
-
-          messages.forEach((msg) => {
-            const div = document.createElement("div");
-            div.className = "chat-item";
-
-            if (msg.type === "link") {
-              div.innerHTML = `🔗 <strong>${msg.from}</strong>：<a href="${msg.url}" target="_blank">${msg.title}</a>`;
-            } else if (msg.type === "image") {
-              div.innerHTML = `🖼️ <strong>${msg.from}</strong>：<img src="${msg.url}" style="max-width: 200px">`;
-            } else if (msg.type === "text") {
-              const isMention = msg.text.includes("@");
-              div.innerHTML = `💬 <strong>${msg.from}</strong>：<span${isMention ? " class='highlight-blink'" : ""}>${msg.text}</span>`;
-            } else {
-              div.innerHTML = `📎 <strong>${msg.from}</strong>：${msg.content || JSON.stringify(msg)}`;
-            }
-
-            block.appendChild(div);
-          });
-
-          list.appendChild(block);
-        });
-      }
-
       function listenToPublicWall() {
         const wallDiv = document.getElementById("messageList");
         const wallRef = window.db.ref("publicWall");
@@ -160,7 +122,6 @@
       }
 
       window.addEventListener("DOMContentLoaded", () => {
-        listenToChatroom();
         listenToPublicWall();
       });
     </script>
