@@ -1,0 +1,71 @@
+# 教師 UI 監控邏輯說明 README（2025）
+
+本文件說明 `teacher-ui` 中教師畫面如何自動監控學生回應，並即時提示教師有學生作答或陌生人交卷。
+
+---
+
+## ✅ 功能概述
+
+- 自動監聽 Firebase `/handwriting/{studentId}/{questionId}` 節點。
+- 若 `studentId` 不在目前教師 UI 畫面中出現（`student-row` 列表內），系統會：
+  - 將其加入名單列表，標記為「陌生」
+  - 在右側應答區跳出紅色訊息框顯示：
+    - 學生 ID
+    - 題號或作答摘要
+  - 畫面出現紅色邊框閃爍 1 秒，提示教師注意
+
+---
+
+## 📡 Firebase 資料結構
+
+```json
+handwriting/{studentId}/{questionId} = {
+  imageUrl: "data:image/png;base64,...",
+  questionId: "自由繪圖_12345",
+  timestamp: 1714551100000,
+  studentName: "ZZ"
+}
+```
+
+教師端程式從 `handwriting` 第一層監聽新增學生，然後再往下監聽每位學生交了哪些題目。
+
+---
+
+## 🛠 使用的主程式
+
+```js
+onChildAdded(ref(db, "handwriting"), (studentSnap) => {
+  const studentId = studentSnap.key;
+  const studentRef = ref(db, `handwriting/${studentId}`);
+
+  onChildAdded(studentRef, (answerSnap) => {
+    const data = answerSnap.val();
+    const questionId = answerSnap.key;
+
+    // 如果這位 studentId 不在學生名單中...
+    // → 在左邊清單新增紅燈 + 右邊顯示紅色訊息 + 閃爍紅框提示
+  });
+});
+```
+
+---
+
+## 🔔 視覺呈現方式
+
+- 使用 `.response-box.red` 顯示陌生回應訊息。
+- 使用 `board.style.border = '3px dashed red'` 實現閃爍邊框效果。
+- 若需強化，也可加入音效提醒、桌面通知、或浮出提示框。
+
+---
+
+## 🧠 延伸建議
+
+| 功能 | 說明 |
+|--|--|
+| 預覽圖片縮圖 | 點陌生交卷可浮出 handwrite 圖像預覽框 |
+| 一鍵封鎖 ID | 教師端可點擊封鎖 ID，不再提示 |
+| 日誌備份 | 自動記錄陌生交卷名單與時間至 localStorage or Firebase logs |
+
+---
+
+## 🐾 本模組由白貓工作室聯合開發，提供教師高效率即時掌握學生互動動態，協助現場教學反應更加精準與即時。
