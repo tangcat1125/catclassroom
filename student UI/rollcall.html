@@ -1,11 +1,11 @@
-<!-- rollcall.html 版本:1.1.0 修正時間:2025-05-01 12:00 -->
+<!-- rollcall.html 版本:1.2.0 修正時間:2025-05-01 13:00 -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>學生點名系統 (Rollcall)</title>
-  <link rel="stylesheet" href="rollcall-style.css" />
+  <link rel="stylesheet" href="rollcall-style.css"/>
 </head>
 <body>
   <header>
@@ -14,36 +14,49 @@
   <main>
     <form id="rollcall-form">
       <div class="form-group">
-        <label for="studentId">學號 / 座號：</label>
-        <input type="text" id="studentId" name="studentId" required />
+        <label for="classType">所屬班級：</label>
+        <select id="classType" name="classType" required>
+          <option value="">請選擇</option>
+          <option value="本班">本班</option>
+          <option value="其他班級">其他班級</option>
+        </select>
       </div>
       <div class="form-group">
         <label for="studentName">姓名：</label>
-        <input type="text" id="studentName" name="studentName" required />
+        <input type="text" id="studentName" name="studentName" required/>
       </div>
       <div class="form-group">
-        <label for="studentClass">班級：</label>
-        <input type="text" id="studentClass" name="studentClass" required />
+        <label for="seatNumber">座號：</label>
+        <input type="text" id="seatNumber" name="seatNumber" pattern="\d+" required/>
       </div>
       <button type="submit">開始</button>
     </form>
   </main>
   <script>
-    document.getElementById('rollcall-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const studentId = document.getElementById('studentId').value.trim();
-      const studentName = document.getElementById('studentName').value.trim();
-      const studentClass = document.getElementById('studentClass').value.trim();
-      if (!studentId || !studentName || !studentClass) {
-        alert('請完整填寫所有欄位！');
-        return;
-      }
-      sessionStorage.setItem('studentId', studentId);
-      sessionStorage.setItem('studentName', studentName);
-      sessionStorage.setItem('studentClass', studentClass);
-      // 跳轉到學生介面
-      window.location.href = 'StudentUi_Login.html';
-    });
+    (function(){
+      const TEACHER_CLASS = '602'; // 請依實際班級修改
+      document.getElementById('rollcall-form').addEventListener('submit', function(e){
+        e.preventDefault();
+        const classType = document.getElementById('classType').value;
+        const studentName = document.getElementById('studentName').value.trim();
+        const seat = document.getElementById('seatNumber').value.trim();
+        if (!classType) { alert('請選擇所屬班級！'); return; }
+        if (!studentName) { alert('請輸入姓名！'); return; }
+        if (!seat) { alert('請輸入座號！'); return; }
+        let studentId, studentClass;
+        if (classType === '本班') {
+          studentId = TEACHER_CLASS + seat;
+          studentClass = TEACHER_CLASS + ' ' + seat + '號';
+        } else {
+          studentId = 'G' + seat;
+          studentClass = 'G' + seat;
+        }
+        sessionStorage.setItem('studentId', studentId);
+        sessionStorage.setItem('studentName', studentName);
+        sessionStorage.setItem('studentClass', studentClass);
+        window.location.href = 'StudentUi_Login.html';
+      });
+    })();
   </script>
 </body>
 </html>
