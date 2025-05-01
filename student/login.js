@@ -2,7 +2,7 @@
 // login.js - 學生登入頁面腳本 (包含 Firebase 初始化與登入寫入)
 // -----------------------------------------------------------------------------
 
-// 步驟 1: Firebase SDK 匯入 (使用最新版本，假設為 10.12.0，請確認最新版本)
+// 步驟 1: Firebase SDK 匯入 (假設使用 10.12.0，請確認最新版本)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
@@ -29,14 +29,15 @@ try {
         console.log("[DOM] 文件載入完成，開始執行腳本。");
 
         // --- DOM 元素獲取 ---
+        const loginForm = document.getElementById('loginForm');
         const identitySelect = document.getElementById('identitySelect');
         const nameInput = document.getElementById('nameInput');
         const seatArea = document.getElementById('seatArea');
         const loginButton = document.getElementById('loginButton');
-        const seatLabel = document.querySelector('label[for="seatInput"]');
+        const seatLabel = document.querySelector('label[for="seatSelect"]');
 
         // 檢查 DOM 元素是否存在
-        if (!identitySelect || !nameInput || !seatArea || !loginButton || !seatLabel) {
+        if (!loginForm || !identitySelect || !nameInput || !seatArea || !loginButton || !seatLabel) {
             console.error("[DOM] 錯誤：找不到必要的 HTML 元素，請檢查 ID 是否正確。");
             document.body.innerHTML = `<div style="color: red; padding: 20px;">頁面載入失敗，找不到必要的表單元素，請聯繫管理員。</div>`;
             return;
@@ -61,6 +62,7 @@ try {
                 seatSelect.style.padding = '10px';
                 seatSelect.style.border = '1px solid #ccc';
                 seatSelect.style.borderRadius = '4px';
+                seatSelect.style.boxSizing = 'border-box';
 
                 // 添加 1 到 52 號選項
                 for (let i = 1; i <= 52; i++) {
@@ -100,9 +102,10 @@ try {
             }
         }
 
-        // --- 函數：處理登入按鈕點擊 ---
-        async function handleLogin() {
-            console.log("[登入] 登入按鈕被點擊。");
+        // --- 函數：處理登入 ---
+        async function handleLogin(event) {
+            event.preventDefault(); // 防止表單提交
+            console.log("[登入] 登入按鈕被點擊或表單提交。");
             const identity = identitySelect.value;
             let name = nameInput.value.trim();
             let seat = '';
@@ -197,6 +200,10 @@ try {
 
         loginButton.addEventListener('click', handleLogin);
         console.log("[事件] 已為登入按鈕添加 'click' 監聽器。");
+
+        // 添加表單提交事件，支援 Enter 鍵
+        loginForm.addEventListener('submit', handleLogin);
+        console.log("[事件] 已為表單添加 'submit' 監聽器。");
 
         // --- 初始化 ---
         console.log("[初始化] 執行首次 updateSeatArea...");
