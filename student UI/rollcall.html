@@ -1,13 +1,11 @@
-<!-- START OF FILE rollcall.html (v4 - 使用 Compat SDK) -->
+<!-- START OF FILE rollcall.html (v5 - 修正 Storage Bucket 並確認 Compat API) -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>學生登入 - 白貓教室</title>
-  <!-- 引入 CSS -->
   <link rel="stylesheet" href="rollcall-style.css" />
-  <!-- 內嵌基本樣式 -->
   <style>
      body { font-family: "Microsoft JhengHei", sans-serif; background-color: #e3f2fd; margin: 0; padding: 20px; }
      .container { max-width: 420px; margin: 50px auto; background-color: #fff; border-radius: 12px; padding: 30px 25px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
@@ -27,7 +25,7 @@
   <div class="container">
     <h2>學生登入</h2>
     <label for="mode">我是...</label>
-    <select id="mode" onchange="window.toggleMode()"> <!-- 掛載到 window -->
+    <select id="mode" onchange="window.toggleMode()">
       <option value="self" selected>本班學生</option>
       <option value="guest">其他班來賓</option>
     </select>
@@ -40,53 +38,52 @@
       <input type="number" id="seat" min="1" max="99" required />
     </div>
 
-    <button type="button" id="loginButton" onclick="window.submitLogin()">登入教室</button> <!-- 掛載到 window -->
+    <button type="button" id="loginButton" onclick="window.submitLogin()">登入教室</button>
     <div id="result" class="note"></div>
   </div>
 
   <img src="cat.png" alt="cat" class="corner-cat" onerror="this.style.display='none';" />
 
   <!-- Firebase 初始化 (使用 Compat 版本) -->
-  <!-- ** 確保引入的是 -compat.js 結尾的版本！ ** -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <script>
     // --- Firebase 配置 ---
-    // ** 【極度重要】請從你的 Firebase 控制台複製真實配置！**
+    // ** 【極度重要】請再次確認並替換成你真實的 Firebase 配置！**
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY", // <-- 替換
       authDomain: "YOUR_AUTH_DOMAIN", // <-- 替換
-      databaseURL: "YOUR_DATABASE_URL", // <-- 替換
+      databaseURL: "YOUR_DATABASE_URL", // <-- 替換 (非常重要，格式如 https://....firebasedatabase.app)
       projectId: "YOUR_PROJECT_ID", // <-- 替換
-      storageBucket: "YOUR_STORAGE_BUCKET", // <-- 替換
+      // ** 【關鍵修改】使用 firebasestorage.app 後綴 **
+      storageBucket: "YOUR_PROJECT_ID.firebasestorage.app", // <-- 替換 YOUR_PROJECT_ID
       messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // <-- 替換
       appId: "YOUR_APP_ID" // <-- 替換
     };
 
     // --- 初始化 Firebase ---
-    let dbCompat = null; // 使用不同的變數名以示區分
+    let dbCompat = null;
     const loginButtonCompat = document.getElementById('loginButton');
     const resultDivCompat = document.getElementById("result");
 
     try {
-         // ** 使用全域 firebase 物件 **
          firebase.initializeApp(firebaseConfig);
-         dbCompat = firebase.database(); // ** 使用 firebase.database() **
+         dbCompat = firebase.database(); // 使用 Compat API
          console.log("Rollcall Firebase (compat) Initialized Successfully!");
          if (resultDivCompat) resultDivCompat.textContent = '請輸入資訊登入';
     } catch (e) {
-         console.error("Rollcall Firebase Init Failed:", e);
+         console.error("Rollcall Firebase Initialization Failed:", e);
          const errorMsg = `登入服務初始化失敗！請檢查 Firebase 配置或網路。\n錯誤: ${e.message}`;
          if (resultDivCompat) { resultDivCompat.textContent = errorMsg; resultDivCompat.classList.add('error'); }
          alert(errorMsg);
          if(loginButtonCompat) loginButtonCompat.disabled = true;
     }
 
-    // --- 切換模式函數 (掛載到 window) ---
+    // --- 切換模式函數 ---
     window.toggleMode = function () {
       const mode = document.getElementById("mode").value;
       const seatBox = document.getElementById("seat-box");
-      if(!seatBox) return; // 防禦性檢查
+      if(!seatBox) return;
       if (mode === "self") {
         seatBox.innerHTML = `<label for="seat">請輸入您的座號（數字）：</label><input type="number" id="seat" min="1" max="99" required />`;
       } else {
@@ -96,13 +93,12 @@
       if (seatElement) seatElement.classList.remove('invalid');
     }
 
-    // --- 登入函數 (掛載到 window) ---
-    window.submitLogin = async function () { // 使用 async 以便使用 await
+    // --- 登入函數 ---
+    window.submitLogin = async function () {
       if (!dbCompat) { alert("登入服務尚未初始化成功，請稍候！"); return; }
-
       const nameInput = document.getElementById("name");
       const seatElement = document.getElementById("seat");
-      const modeElement = document.getElementById("mode"); // 獲取下拉選單元素
+      const modeElement = document.getElementById("mode");
       if (!nameInput || !seatElement || !modeElement) { console.error("找不到登入表單元素！"); return; }
 
       nameInput.classList.remove('invalid'); seatElement.classList.remove('invalid');
@@ -130,13 +126,13 @@
 
       try {
         // ** 使用 Compat API 獲取引用並寫入 **
-        const loginRefCompat = dbCompat.ref(`login/${studentId}`); // 從 dbCompat 實例獲取引用
-        await loginRefCompat.set(loginData); // 使用引用物件的 set 方法
+        const loginRefCompat = dbCompat.ref(`login/${studentId}`);
+        await loginRefCompat.set(loginData);
 
         console.log("Firebase 寫入成功！");
         if (resultDivCompat) resultDivCompat.innerText = `✅ 您已登入為 ${name} (${studentClassForStorage})，將跳轉...`;
         sessionStorage.setItem("studentId", studentId); sessionStorage.setItem("studentName", name);
-        sessionStorage.setItem("studentClass", studentClassForStorage);
+        sessionStorage.setItem("studentClass", studentClassForStorage); // 存 "班級 座號號"
         setTimeout(() => { window.location.href = "StudentUi_Login.html"; }, 1200);
       } catch (error) {
         console.error("❌ Firebase 寫入失敗：", error);
@@ -146,13 +142,9 @@
         if (loginButtonCompat) loginButtonCompat.disabled = false;
       }
     }
-    // 頁面載入時手動調用一次，確保初始模式正確顯示
-    document.addEventListener('DOMContentLoaded', () => {
-        if (typeof window.toggleMode === 'function') {
-             window.toggleMode();
-        }
-    });
+    // DOM Ready 後初始化模式顯示
+    document.addEventListener('DOMContentLoaded', () => { if (typeof window.toggleMode === 'function') { window.toggleMode(); } });
   </script>
 </body>
 </html>
-<!-- END OF FILE rollcall.html (v4 - 使用 Compat SDK) -->
+<!-- END OF FILE rollcall.html (v5 - 修正 Storage Bucket 並確認 Compat API) -->
