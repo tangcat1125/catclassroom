@@ -1,268 +1,293 @@
-  // --- START OF <script type="module"> in handwrite-upload.html (獨立運作修改版) ---
+<!-- START OF FILE handwrite-upload.html (v2 - 支援背景圖與獨立運作) -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /> <!-- 優化移動端 -->
+  <title>智慧手寫</title>
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f4f8; /* 淡藍灰色背景 */
+      padding: 15px;
+      margin: 0;
+      display: flex; /* 使用 Flexbox 佈局 */
+      flex-direction: column; /* 垂直排列 */
+      align-items: center; /* 水平居中 */
+      min-height: 95vh; /* 至少佔滿視窗高度 */
+    }
+    h1 {
+      color: #1a237e; /* 深藍色標題 */
+      margin-bottom: 15px;
+      font-size: 1.5em;
+    }
+    canvas {
+      border: 2px solid #90a4ae; /* 藍灰色邊框 */
+      margin-top: 10px;
+      background: #ffffff; /* 白色畫布背景 */
+      touch-action: none; /* 防止觸控時瀏覽器預設行為 (如縮放) */
+      cursor: crosshair; /* 畫布上顯示十字游標 */
+      max-width: 100%; /* 限制最大寬度 */
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 細微陰影 */
+      border-radius: 4px; /* 輕微圓角 */
+    }
+    .controls { /* 按鈕容器 */
+        margin-top: 15px;
+        margin-bottom: 15px;
+        display: flex; /* 讓按鈕並排 */
+        gap: 10px; /* 按鈕間距 */
+        flex-wrap: wrap; /* 按鈕多時換行 */
+        justify-content: center; /* 按鈕居中 */
+    }
+    button {
+      padding: 10px 18px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background-color: #4caf50; /* 綠色 */
+      color: white;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #388e3c; /* 深綠色 */
+    }
+    button[onclick="clearCanvas()"] {
+        background-color: #ff9800; /* 橘色 */
+    }
+     button[onclick="clearCanvas()"]:hover {
+        background-color: #f57c00; /* 深橘色 */
+    }
+     button:disabled { /* 禁用按鈕樣式 */
+        background-color: #bdbdbd;
+        cursor: not-allowed;
+     }
+    #uploadStatus {
+      margin-top: 10px;
+      font-size: 1em;
+      font-weight: bold;
+      min-height: 1.2em; /* 佔位避免跳動 */
+    }
+    #previewImage {
+      margin-top: 10px;
+      max-width: 90%; /* 限制預覽圖大小 */
+      max-height: 100px;
+      border: 1px solid #ccc;
+      display: none; /* 預設隱藏 */
+      background-color: #eee; /* 預覽圖背景 */
+    }
+    /* 針對小螢幕調整畫布大小和按鈕 */
+    @media (max-width: 400px) {
+        canvas {
+             /* 在JS中設置了大小，這裡可以不用動 */
+        }
+        button {
+            font-size: 0.9em;
+            padding: 8px 15px;
+        }
+        h1 {
+             font-size: 1.3em;
+        }
+    }
+  </style>
+</head>
+<body>
+  <!-- 標題會由 JS 動態修改 -->
+  <h1 id="pageTitle">🎨 載入中...</h1>
+
+  <!-- 繪圖畫布 -->
+  <canvas id="handwriteCanvas" width="320" height="320"></canvas> <!-- 給定初始大小 -->
+
+  <!-- 控制按鈕 -->
+  <div class="controls">
+    <button onclick="clearCanvas()">✏️ 清除筆跡</button>
+    <button onclick="uploadHandwrite()">📤 上傳作答</button>
+  </div>
+
+  <!-- 上傳狀態和預覽 -->
+  <div id="uploadStatus"></div>
+  <img id="previewImage" alt="上傳預覽"/>
+
+  <!-- JavaScript 程式碼 -->
   <script type="module">
     // 1. 引入 Firebase 工具
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
-    // 2. Firebase 設定 (與學生端一致)
+    // 2. Firebase 設定
     const firebaseConfig = {
       apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
       authDomain: "catclassroom-login.firebaseapp.com",
       databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "catclassroom-login",
-      storageBucket: "catclassroom-login.appspot.com", // 使用 .appspot.com
+      storageBucket: "catclassroom-login.appspot.com",
       messagingSenderId: "123487233181",
-      appId: "1:123487233181:web:aecc2891dc2d1096962074" // 確認是學生端/手寫模組的 App ID
+      appId: "1:123487233181:web:aecc2891dc2d1096962074" // 確認 App ID
     };
 
     // 3. 初始化 Firebase
-    let db; // 把 db 宣告提出來
+    let db = null; // 初始化為 null
+    const uploadButton = document.querySelector('button[onclick="uploadHandwrite()"]');
     try {
         const app = initializeApp(firebaseConfig);
         db = getDatabase(app);
         console.log("Handwrite Firebase 初始化成功！");
     } catch(e) {
         console.error("Handwrite Firebase 初始化失敗！", e);
-        alert("錯誤：無法連接後端服務！手寫功能可能無法上傳。");
-        // 可以在此禁用上傳按鈕等
-        const uploadButton = document.querySelector('button[onclick="uploadHandwrite()"]');
-        if(uploadButton) {
-            uploadButton.disabled = true;
-            uploadButton.textContent = '連線失敗';
-            uploadButton.style.backgroundColor = 'grey';
-        }
+        alert("錯誤：無法連接後端服務！手寫內容將無法上傳。");
+        if(uploadButton) { uploadButton.disabled = true; uploadButton.textContent = '連線失敗'; uploadButton.style.backgroundColor = 'grey'; }
     }
-
 
     // 4. 取得畫面元素和設定 Canvas
     const canvas = document.getElementById('handwriteCanvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false }); // alpha:false 提高效能 (如果不需要透明度)
     const uploadStatusDiv = document.getElementById('uploadStatus');
     const previewImage = document.getElementById('previewImage');
-    const pageTitle = document.querySelector('h1'); // 取得標題元素
+    const pageTitleElement = document.getElementById('pageTitle'); // 使用 ID 獲取
     let drawing = false;
-    let hasContent = false; // 追蹤畫布是否有內容
+    let hasContent = false; // 追蹤是否有筆跡
 
-    // 5. 讀取 URL 參數 (處理老師發來的任務)
+    // --- Canvas 大小自適應 ---
+    function resizeCanvas() {
+        const maxWidth = window.innerWidth * 0.95; // 最大寬度為視窗的 95%
+        const maxHeight = window.innerHeight * 0.6; // 最大高度為視窗的 60% (留空間給按鈕等)
+        const defaultSize = 320; // 預設大小
+        const size = Math.min(maxWidth, maxHeight, defaultSize); // 取最小值
+
+        // 檢查 Canvas 是否已經存在寬高，如果改變了才重設並重繪
+        if (canvas.width !== size || canvas.height !== size) {
+            // 保存當前內容
+            const currentImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            canvas.width = size;
+            canvas.height = size;
+
+            // 恢復內容 (如果需要，但通常重設大小後需要重繪背景)
+            // ctx.putImageData(currentImageData, 0, 0);
+             console.log(`Canvas resized to ${size}x${size}. Reinitializing...`);
+             // 重新初始化畫布 (會重繪背景)
+             initializeCanvas();
+        }
+    }
+    // 初始調整一次，並監聽視窗大小變化
+    // resizeCanvas(); // 在 initializeCanvas 之前調用可能導致背景繪製問題，移到後面
+    // window.addEventListener('resize', resizeCanvas); // resize 事件可能過於頻繁，暫不啟用
+
+    // 5. 讀取 URL 參數
     const urlParams = new URLSearchParams(window.location.search);
-    const backgroundUrl = urlParams.get('backgroundUrl'); // 老師截圖的 URL
-    let questionId = urlParams.get('questionId'); // 可能是題目 ID 或 截圖任務 ID
-    const studentIdFromUrl = urlParams.get('studentId'); // 學生 ID (如果有的話)
+    const backgroundUrl = urlParams.get('backgroundUrl');
+    let questionId = urlParams.get('questionId'); // 可被覆蓋
+    const studentIdFromUrl = urlParams.get('studentId');
 
-    // 獲取學生資訊 (優先從 URL 讀取，其次從 sessionStorage)
-    const studentId = studentIdFromUrl || sessionStorage.getItem("studentId") || "guest";
+    // 獲取學生資訊
+    const studentId = studentIdFromUrl || sessionStorage.getItem("studentId") || "guest_" + Date.now(); // 給 guest 加時間戳
     const studentName = sessionStorage.getItem("studentName") || "匿名學生";
-    // const studentClass = sessionStorage.getItem("studentClass") || "未知班級"; // 這個頁面可能不需要班級
 
-    console.log(`手寫頁面載入: studentId=${studentId}, questionId=${questionId}, backgroundUrl=${backgroundUrl ? '有' : '無'}`);
+    console.log(`手寫頁面: studentId=${studentId}, initial_questionId=${questionId}, hasBackground=${!!backgroundUrl}`);
 
     // 6. 初始化畫布 (繪製背景或清空)
+    let isBackgroundLoading = false; // 標記背景是否正在載入
     function initializeCanvas() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // 先清空
-        hasContent = false; // 重設內容標記
+        isBackgroundLoading = false; // 重設標記
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        hasContent = false;
+        // 預設白色背景
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
         if (backgroundUrl) {
-            console.log("嘗試載入背景圖:", backgroundUrl);
-            pageTitle.innerText = '📝 智慧註記模式'; // 修改標題
+            console.log("準備載入背景圖:", backgroundUrl);
+            if (pageTitleElement) pageTitleElement.innerText = '📝 智慧註記 (載入中...)';
+            isBackgroundLoading = true;
             const img = new Image();
-            img.crossOrigin = "Anonymous";
+            img.crossOrigin = "Anonymous"; // 非常重要，否則 toDataURL 可能會因安全問題失敗
             img.onload = function() {
+                isBackgroundLoading = false;
                 console.log("背景圖載入成功，繪製...");
+                if (pageTitleElement) pageTitleElement.innerText = '📝 智慧註記模式';
                 try {
+                    // 清除預設白色背景，繪製圖片
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     console.log("背景圖繪製完成。");
-                    // 背景圖不算學生畫的內容，所以 hasContent 仍然是 false
                 } catch (drawError) {
-                     console.error("繪製背景圖失敗:", drawError);
-                     alert("錯誤：無法繪製背景圖。");
-                     // 繪製失敗，還是填個白色背景
-                     ctx.fillStyle = "#FFFFFF";
-                     ctx.fillRect(0, 0, canvas.width, canvas.height);
+                     console.error("繪製背景圖失敗:", drawError); alert("錯誤：無法繪製背景圖。");
+                     ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, canvas.width, canvas.height); // 恢復白色背景
+                     if (pageTitleElement) pageTitleElement.innerText = '⚠️ 背景繪製失敗';
                 }
             };
             img.onerror = function(e) {
-                console.error("載入背景圖失敗:", backgroundUrl, e);
-                alert("錯誤：無法載入老師提供的背景圖，請檢查圖片連結或網路。");
-                pageTitle.innerText = '⚠️ 背景載入失敗 (自由繪圖)';
-                // 載入失敗，填白色背景
-                ctx.fillStyle = "#FFFFFF";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                isBackgroundLoading = false;
+                console.error("載入背景圖失敗:", backgroundUrl, e); alert("錯誤：無法載入老師提供的背景圖。");
+                if (pageTitleElement) pageTitleElement.innerText = '⚠️ 背景載入失敗';
+                // 不需要再畫白色背景，因為初始時已經畫了
             };
-            // 使用 decodeURIComponent 解碼 URL
-            try {
-                 img.src = decodeURIComponent(backgroundUrl);
-            } catch (uriError) {
-                 console.error("背景圖 URL 解碼失敗:", uriError);
-                 alert("錯誤：背景圖連結格式錯誤。");
-                 ctx.fillStyle = "#FFFFFF";
-                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-
+            try { img.src = decodeURIComponent(backgroundUrl); }
+            catch (uriError) { isBackgroundLoading = false; console.error("背景圖 URL 解碼失敗:", uriError); alert("錯誤：背景圖連結格式錯誤。"); if (pageTitleElement) pageTitleElement.innerText = '⚠️ 背景連結錯誤'; }
         } else {
-            console.log("無背景圖，初始化為空白畫布 (自由繪圖模式)。");
-            pageTitle.innerText = '🎨 自由繪圖模式'; // 修改標題
-            // 填上白色背景
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            console.log("無背景圖，自由繪圖模式。");
+            if (pageTitleElement) pageTitleElement.innerText = '🎨 自由繪圖模式';
+            // 白色背景已在函數開頭繪製
         }
-        previewImage.style.display = "none"; // 隱藏舊預覽
-        uploadStatusDiv.textContent = ""; // 清除舊狀態
+        if(previewImage) previewImage.style.display = "none";
+        if(uploadStatusDiv) uploadStatusDiv.textContent = "";
     }
 
     // 7. Canvas 繪圖事件處理函數
-    function getCanvasPos(e) {
-      const rect = canvas.getBoundingClientRect();
-      const touch = e.touches ? e.touches[0] : null;
-      return {
-        x: touch ? touch.clientX - rect.left : e.offsetX,
-        y: touch ? touch.clientY - rect.top : e.offsetY
-      };
-    }
-
-    function startDraw(e) {
-      // 只有當 Firebase 初始化成功才允許繪圖 (可選)
-       // if (!db) return;
-      e.preventDefault(); // 阻止頁面滾動等預設行為
-      drawing = true;
-      hasContent = true; // 開始畫圖就算有內容
-      const pos = getCanvasPos(e);
-      ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y);
-    }
-
-    function draw(e) {
-      if (!drawing) return;
-      e.preventDefault();
-      const pos = getCanvasPos(e);
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = '#000000'; // 黑色
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
-      // 在畫完一筆後重新開始路徑，避免影響下一筆的 moveTo
-      ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y);
-    }
-
-    function endDraw(e) {
-      if (!drawing) return;
-      e.preventDefault();
-      drawing = false;
-      ctx.beginPath(); // 結束目前路徑，避免 MouseOut 後又連線
-    }
+    function getCanvasPos(e) { const rect = canvas.getBoundingClientRect(); const touch = e.touches?.[0]; return { x: touch ? touch.clientX - rect.left : e.offsetX, y: touch ? touch.clientY - rect.top : e.offsetY }; }
+    function startDraw(e) { if(isBackgroundLoading) return; e.preventDefault(); drawing = true; hasContent = true; const pos = getCanvasPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
+    function draw(e) { if (!drawing || isBackgroundLoading) return; e.preventDefault(); const pos = getCanvasPos(e); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#000000'; ctx.lineTo(pos.x, pos.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
+    function endDraw(e) { if (!drawing) return; e.preventDefault(); drawing = false; ctx.beginPath(); }
 
     // 8. 綁定事件監聽器
-    // 電腦滑鼠事件
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', endDraw);
-    canvas.addEventListener('mouseout', endDraw); // 滑鼠移出畫布也停止繪畫
-    // 觸控螢幕事件
-    canvas.addEventListener('touchstart', startDraw, { passive: false }); // passive:false 允許 preventDefault
-    canvas.addEventListener('touchmove', draw, { passive: false });
-    canvas.addEventListener('touchend', endDraw);
-    canvas.addEventListener('touchcancel', endDraw); // 例如被系統中斷觸控
+    canvas.addEventListener('mousedown', startDraw); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', endDraw); canvas.addEventListener('mouseout', endDraw);
+    canvas.addEventListener('touchstart', startDraw, { passive: false }); canvas.addEventListener('touchmove', draw, { passive: false }); canvas.addEventListener('touchend', endDraw); canvas.addEventListener('touchcancel', endDraw);
 
-    // 9. 按鈕功能函數 (掛載到 window)
-
-    /**
-     * 清除畫布內容 (保留背景圖)
-     */
-    window.clearCanvas = function () {
-      if (!confirm("確定要清除你畫的所有內容嗎？背景圖將會保留。")) {
-          return;
-      }
-      console.log("清除畫布內容...");
-      // 只清除使用者畫的內容，需要重新繪製背景
-      initializeCanvas(); // 重新初始化畫布即可
-    }
-
-    /**
-     * 上傳手寫作答到 Firebase
-     */
+    // 9. 按鈕功能函數
+    window.clearCanvas = function () { if(isBackgroundLoading) return; if (!confirm("確定清除筆跡？背景將保留。")) return; console.log("清除筆跡..."); initializeCanvas(); }
     window.uploadHandwrite = async function () {
-      // 檢查 Firebase 是否可用
-       if (!db) {
-           alert("錯誤：無法連接後端服務，無法上傳。");
-           return;
+       if (!db) { alert("錯誤：未連接服務，無法上傳。"); return; }
+       if (!hasContent) { alert("請先畫點東西！"); return; }
+       if (isBackgroundLoading) { alert("背景正在載入，請稍候再上傳。"); return; }
+
+       const finalQuestionId = questionId || `自由繪圖_${Date.now()}`;
+       console.log(`準備上傳: studentId=${studentId}, questionId=${finalQuestionId}`);
+
+       let imageUrl;
+       try { imageUrl = canvas.toDataURL("image/png"); }
+       catch (e) { console.error("Canvas toDataURL 失敗:", e); alert("錯誤：無法轉換繪圖。"); return; }
+       if (imageUrl.length > 2 * 1024 * 1024) { console.warn("圖片 Data URL 過長"); alert("警告：繪圖過大，可能無法儲存。"); }
+
+       const data = { studentId, studentName, questionId: finalQuestionId, imageUrl, hasBackground: !!backgroundUrl, timestamp: Date.now() };
+       const refPath = ref(db, `handwriting/${studentId}/${finalQuestionId}`);
+
+       if (uploadStatusDiv) { uploadStatusDiv.style.color = "#555"; uploadStatusDiv.textContent = "📤 上傳中..."; }
+       if (previewImage) previewImage.style.display = "none";
+       if (uploadButton) uploadButton.disabled = true; // 禁用按鈕
+
+       try {
+         await set(refPath, data);
+         console.log("手寫上傳成功！");
+         if (uploadStatusDiv) { uploadStatusDiv.style.color = "green"; uploadStatusDiv.textContent = "✅ 上傳成功！"; }
+         if (previewImage) { previewImage.src = imageUrl; previewImage.style.display = "block"; }
+         // 提示並延遲關閉
+         alert("作答已成功上傳！此視窗將在 3 秒後自動關閉。");
+         setTimeout(() => { window.close(); }, 3000);
+
+       } catch (e) {
+         console.error("❌ 上傳手寫到 Firebase 失敗：", e);
+         if (uploadStatusDiv) { uploadStatusDiv.style.color = "red"; uploadStatusDiv.textContent = "❌ 上傳失敗，請重試"; }
+         alert("❌ 上傳失敗！請檢查網路或稍後重試。");
+         if (uploadButton) uploadButton.disabled = false; // 發生錯誤時恢復按鈕
        }
-       // 檢查畫布是否有內容 (不含背景圖)
-       if (!hasContent) {
-           alert("請先在畫布上畫點東西再上傳！");
-           return;
-       }
-
-
-      // 決定 questionId：如果 URL 沒有提供，就使用預設值
-      const finalQuestionId = questionId || `自由繪圖_${Date.now()}`;
-      console.log(`準備上傳手寫: studentId=${studentId}, questionId=${finalQuestionId}`);
-
-      // 將 Canvas 內容轉換為 PNG 格式的 Data URL
-      let imageUrl;
-      try {
-           imageUrl = canvas.toDataURL("image/png");
-           // 檢查 Data URL 是否過長 (某些瀏覽器或環境可能有限制)
-           if (imageUrl.length > 2 * 1024 * 1024) { // 限制 2MB (Data URL 通常比原圖大)
-               console.warn("產生的圖片 Data URL 過長，可能無法儲存。");
-               alert("警告：繪圖內容過於複雜，可能無法成功儲存。請嘗試簡化內容。");
-               // 可以選擇是否繼續嘗試上傳
-           }
-      } catch (e) {
-          console.error("Canvas 轉換為 Data URL 失敗:", e);
-          alert("錯誤：無法將繪圖轉換為圖片格式。");
-          return;
-      }
-
-
-      // 準備要儲存的資料
-      const data = {
-        studentId: studentId,
-        studentName: studentName,
-        // studentClass: studentClass, // 可選
-        questionId: finalQuestionId, // 使用最終確定的 ID
-        imageUrl: imageUrl,          // 包含背景和筆跡的圖片資料
-        hasBackground: !!backgroundUrl, // 標記是否有背景圖
-        timestamp: Date.now()
-      };
-
-      // 指定 Firebase 儲存路徑 (例如 handwriting/S01/自由繪圖_12345)
-      const refPath = ref(db, `handwriting/${studentId}/${finalQuestionId}`);
-
-      // 更新畫面狀態為上傳中
-      if (uploadStatusDiv) {
-          uploadStatusDiv.style.color = "#555";
-          uploadStatusDiv.textContent = "📤 上傳中，請稍候...";
-      }
-      if (previewImage) previewImage.style.display = "none"; // 隱藏舊預覽
-
-      // 執行上傳 (使用 set 會覆蓋同名舊作答)
-      try {
-        await set(refPath, data);
-        console.log("手寫資料成功上傳！");
-        if (uploadStatusDiv) {
-            uploadStatusDiv.style.color = "green";
-            uploadStatusDiv.textContent = "✅ 上傳成功！";
-        }
-        // 顯示剛上傳的圖片預覽
-        if (previewImage) {
-            previewImage.src = imageUrl;
-            previewImage.style.display = "block";
-        }
-        // 上傳成功後，可以考慮自動關閉視窗或提示使用者
-        // alert("作答已上傳成功！可以關閉此分頁了。");
-        // window.close(); // 可能被瀏覽器阻擋
-
-      } catch (e) {
-        console.error("❌ 上傳手寫資料到 Firebase 失敗：", e);
-        if (uploadStatusDiv) {
-            uploadStatusDiv.style.color = "red";
-            uploadStatusDiv.textContent = "❌ 上傳失敗，請檢查網路或稍後再試";
-        }
-        alert("❌ 上傳失敗！請檢查網路連線或聯繫老師。");
-      }
     }
 
-    // 10. 頁面載入時初始化畫布
-    initializeCanvas();
+    // 10. 頁面載入時執行初始化和首次 Canvas 調整
+    // resizeCanvas(); // 先調整大小
+    initializeCanvas(); // 再初始化內容和背景
 
   </script>
-  // --- END OF <script type="module"> in handwrite-upload.html ---
+</body>
+</html>
+<!-- END OF FILE handwrite-upload.html (v2 - 支援背景圖與獨立運作) -->
