@@ -80,24 +80,23 @@ let currentChatId = 'lobby';
 let lastHandledTaskId = null;
 console.log("全域變數已初始化。");
 
-// -----------------------------------------------------------------------------
-// 步驟 7：輔助函數 (escapeHtml - 稍微修改寫法)
+// 步驟 7：輔助函數 (escapeHtml - 修正版)
 // -----------------------------------------------------------------------------
 function escapeHtml(unsafe) {
-    if (unsafe === null || unsafe === undefined) return ""; // 處理 null/undefined
+    if (unsafe === null || unsafe === undefined) return "";
     try {
-        // 先確保是字串
         let safe = String(unsafe);
-        // 執行替換
         safe = safe.replace(/&/g, "&");
         safe = safe.replace(/</g, "<");
         safe = safe.replace(/>/g, ">");
+        // *** 修正第 95 行 ***
         safe = safe.replace(/"/g, """);
+        // *** 修正第 96 行 ***
         safe = safe.replace(/'/g, "'");
         return safe;
     } catch (e) {
         console.error("escapeHtml 執行錯誤:", e, "原始值:", unsafe);
-        return " [內容轉換錯誤] "; // 返回一個錯誤提示
+        return " [內容轉換錯誤] ";
     }
 }
 console.log("escapeHtml 函數已定義。");
