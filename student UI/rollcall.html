@@ -1,4 +1,4 @@
-<!-- START OF FILE rollcall.html (v3 - 修正初始化檢查) -->
+<!-- START OF FILE rollcall.html (v4 - 使用 Compat SDK) -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -15,19 +15,19 @@
      label { display: block; font-size: 16px; margin-top: 15px; margin-bottom: 5px; color: #333; }
      input, select { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px; }
      button { width: 100%; margin-top: 25px; padding: 14px; font-size: 18px; background-color: #42a5f5; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
-     button:hover:not(:disabled) { background-color: #1976d2; } /* 僅在非禁用時變色 */
-     button:disabled { background-color: #bdbdbd; cursor: not-allowed; } /* 禁用樣式 */
+     button:hover:not(:disabled) { background-color: #1976d2; }
+     button:disabled { background-color: #bdbdbd; cursor: not-allowed; }
      .note { text-align: center; margin-top: 15px; font-size: 15px; color: green; min-height: 1.2em; }
-     .error { color: red; font-weight: bold; } /* 錯誤訊息樣式 */
+     .note.error { color: red; font-weight: bold; }
+     input.invalid, select.invalid { border-color: red !important; }
      .corner-cat { position: fixed; bottom: 8px; right: 8px; width: 60px; opacity: 0.9; }
-     input.invalid, select.invalid { border-color: red !important; } /* 輸入錯誤提示 */
   </style>
 </head>
 <body>
   <div class="container">
     <h2>學生登入</h2>
     <label for="mode">我是...</label>
-    <select id="mode" onchange="toggleMode()">
+    <select id="mode" onchange="window.toggleMode()"> <!-- 掛載到 window -->
       <option value="self" selected>本班學生</option>
       <option value="guest">其他班來賓</option>
     </select>
@@ -37,53 +37,56 @@
 
     <div id="seat-box">
       <label for="seat">請輸入您的座號（數字）：</label>
-      <input type="number" id="seat" min="1" max="99" required /> <!-- 最大座號可調整 -->
+      <input type="number" id="seat" min="1" max="99" required />
     </div>
 
-    <button type="button" id="loginButton" onclick="submitLogin()">登入教室</button>
+    <button type="button" id="loginButton" onclick="window.submitLogin()">登入教室</button> <!-- 掛載到 window -->
     <div id="result" class="note"></div>
   </div>
 
   <img src="cat.png" alt="cat" class="corner-cat" onerror="this.style.display='none';" />
 
-  <!-- Firebase 初始化 -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"></script>
+  <!-- Firebase 初始化 (使用 Compat 版本) -->
+  <!-- ** 確保引入的是 -compat.js 結尾的版本！ ** -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <script>
     // --- Firebase 配置 ---
-    // ** 【極度重要】請從你的 Firebase 控制台複製真實配置，替換下面的範例值！**
+    // ** 【極度重要】請從你的 Firebase 控制台複製真實配置！**
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY", // <-- 替換成你的
-      authDomain: "YOUR_AUTH_DOMAIN",  // <-- 替換成你的
-      databaseURL: "YOUR_DATABASE_URL", // <-- 替換成你的，確認 URL 完全正確
-      projectId: "YOUR_PROJECT_ID", // <-- 替換成你的
-      storageBucket: "YOUR_STORAGE_BUCKET", // <-- 替換成你的
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // <-- 替換成你的
-      appId: "YOUR_APP_ID" // <-- 替換成你的 Web App ID
+      apiKey: "YOUR_API_KEY", // <-- 替換
+      authDomain: "YOUR_AUTH_DOMAIN", // <-- 替換
+      databaseURL: "YOUR_DATABASE_URL", // <-- 替換
+      projectId: "YOUR_PROJECT_ID", // <-- 替換
+      storageBucket: "YOUR_STORAGE_BUCKET", // <-- 替換
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // <-- 替換
+      appId: "YOUR_APP_ID" // <-- 替換
     };
 
     // --- 初始化 Firebase ---
-    let db = null; // 初始化為 null
-    const loginButton = document.getElementById('loginButton');
-    const resultDiv = document.getElementById("result");
+    let dbCompat = null; // 使用不同的變數名以示區分
+    const loginButtonCompat = document.getElementById('loginButton');
+    const resultDivCompat = document.getElementById("result");
 
     try {
-         const app = initializeApp(firebaseConfig);
-         db = getDatabase(app);
-         console.log("Rollcall Firebase Initialized Successfully!");
-         if (resultDiv) resultDiv.textContent = '請輸入資訊登入'; // 初始化成功提示
+         // ** 使用全域 firebase 物件 **
+         firebase.initializeApp(firebaseConfig);
+         dbCompat = firebase.database(); // ** 使用 firebase.database() **
+         console.log("Rollcall Firebase (compat) Initialized Successfully!");
+         if (resultDivCompat) resultDivCompat.textContent = '請輸入資訊登入';
     } catch (e) {
-         console.error("Rollcall Firebase Initialization Failed:", e);
+         console.error("Rollcall Firebase Init Failed:", e);
          const errorMsg = `登入服務初始化失敗！請檢查 Firebase 配置或網路。\n錯誤: ${e.message}`;
-         if (resultDiv) { resultDiv.textContent = errorMsg; resultDiv.classList.add('error'); }
+         if (resultDivCompat) { resultDivCompat.textContent = errorMsg; resultDivCompat.classList.add('error'); }
          alert(errorMsg);
-         if(loginButton) loginButton.disabled = true;
+         if(loginButtonCompat) loginButtonCompat.disabled = true;
     }
 
-    // --- 切換模式函數 ---
+    // --- 切換模式函數 (掛載到 window) ---
     window.toggleMode = function () {
       const mode = document.getElementById("mode").value;
       const seatBox = document.getElementById("seat-box");
+      if(!seatBox) return; // 防禦性檢查
       if (mode === "self") {
         seatBox.innerHTML = `<label for="seat">請輸入您的座號（數字）：</label><input type="number" id="seat" min="1" max="99" required />`;
       } else {
@@ -93,14 +96,18 @@
       if (seatElement) seatElement.classList.remove('invalid');
     }
 
-    // --- 登入函數 ---
-    window.submitLogin = async function () {
-      if (!db) { alert("登入服務尚未初始化成功，請稍候！"); return; }
+    // --- 登入函數 (掛載到 window) ---
+    window.submitLogin = async function () { // 使用 async 以便使用 await
+      if (!dbCompat) { alert("登入服務尚未初始化成功，請稍候！"); return; }
+
       const nameInput = document.getElementById("name");
       const seatElement = document.getElementById("seat");
-      const mode = document.getElementById("mode").value;
+      const modeElement = document.getElementById("mode"); // 獲取下拉選單元素
+      if (!nameInput || !seatElement || !modeElement) { console.error("找不到登入表單元素！"); return; }
+
       nameInput.classList.remove('invalid'); seatElement.classList.remove('invalid');
-      const name = nameInput.value.trim(); const seatValue = seatElement.value;
+      const name = nameInput.value.trim(); const seatValue = seatElement.value; const mode = modeElement.value;
+
       let isValid = true;
       if (!name) { nameInput.classList.add('invalid'); isValid = false; }
       if (!seatValue) { seatElement.classList.add('invalid'); isValid = false; }
@@ -110,32 +117,42 @@
       if (mode === "self") {
           if (!/^\d+$/.test(seatValue) || parseInt(seatValue) < 1) { alert("座號請輸入有效的正整數！"); seatElement.classList.add('invalid'); return; }
           studentId = seatValue.toString().padStart(2, "0");
-          const assumedClass = "預設班級"; // *** 請修改為你的預設班級名，或添加班級輸入框 ***
+          const assumedClass = "預設班級"; // *** 請修改為你的預設班級名 ***
           studentClassForStorage = `${assumedClass} ${studentId}號`;
       } else {
           studentId = seatValue; studentClassForStorage = `訪客 (${studentId})`;
       }
       console.log(`準備登入: ID=${studentId}, Name=${name}, ClassForStorage=${studentClassForStorage}`);
+
       const loginData = { StudentName: name, StudentID: studentId, Timestamp: new Date().toISOString() };
-      if (loginButton) loginButton.disabled = true;
-      if (resultDiv) { resultDiv.textContent = "登入中..."; resultDiv.classList.remove('error'); }
+      if (loginButtonCompat) loginButtonCompat.disabled = true;
+      if (resultDivCompat) { resultDivCompat.textContent = "登入中..."; resultDivCompat.classList.remove('error'); }
 
       try {
-        const loginRef = ref(db, `login/${studentId}`); await set(loginRef, loginData);
+        // ** 使用 Compat API 獲取引用並寫入 **
+        const loginRefCompat = dbCompat.ref(`login/${studentId}`); // 從 dbCompat 實例獲取引用
+        await loginRefCompat.set(loginData); // 使用引用物件的 set 方法
+
         console.log("Firebase 寫入成功！");
-        if (resultDiv) resultDiv.innerText = `✅ 您已登入為 ${name} (${studentClassForStorage})，將跳轉...`;
+        if (resultDivCompat) resultDivCompat.innerText = `✅ 您已登入為 ${name} (${studentClassForStorage})，將跳轉...`;
         sessionStorage.setItem("studentId", studentId); sessionStorage.setItem("studentName", name);
-        sessionStorage.setItem("studentClass", studentClassForStorage); // 存 "班級 座號號"
+        sessionStorage.setItem("studentClass", studentClassForStorage);
         setTimeout(() => { window.location.href = "StudentUi_Login.html"; }, 1200);
       } catch (error) {
         console.error("❌ Firebase 寫入失敗：", error);
         const errorMsg = `❌ 登入失敗: ${error.message}`;
-        if (resultDiv) { resultDiv.textContent = errorMsg; resultDiv.classList.add('error'); }
+        if (resultDivCompat) { resultDivCompat.textContent = errorMsg; resultDivCompat.classList.add('error'); }
         alert("登入失敗，請檢查網路、Firebase規則或稍後再試！");
-        if (loginButton) loginButton.disabled = false;
+        if (loginButtonCompat) loginButtonCompat.disabled = false;
       }
     }
+    // 頁面載入時手動調用一次，確保初始模式正確顯示
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof window.toggleMode === 'function') {
+             window.toggleMode();
+        }
+    });
   </script>
 </body>
 </html>
-<!-- END OF FILE rollcall.html (v3 - 修正初始化檢查) -->
+<!-- END OF FILE rollcall.html (v4 - 使用 Compat SDK) -->
