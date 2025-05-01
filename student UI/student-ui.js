@@ -8,7 +8,7 @@ import {
 
 // ← 在這裡完整貼上您 firebase-config.js 的內容 ↓
 const firebaseConfig = {
-  apiKey: "AIza…",                     // ← 您的真正金鑰
+  apiKey: "AIza…",
   authDomain: "your-app.firebaseapp.com",
   databaseURL: "https://your-app.firebaseio.com",
   projectId: "your-app",
@@ -24,7 +24,7 @@ console.log('✅ Firebase 已完成初始化');
 
 // 全域設定
 const TOTAL_STUDENTS = 13;
-let studentId, studentName, studentClass;
+let studentId, studentName, studentClass, el;
 
 // 監聽 DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
@@ -53,10 +53,10 @@ function loadStudentInfo(){
 }
 
 // 快取 DOM
-let el = {};
 function cacheDOM(){
+  el = {};
   el.nameSpan     = document.getElementById('student-name');
-  el.classSpan    = document.getElementById('student-seat');
+  el.classSpan    = document.getElementById('student-class');  // 修正為 student-class
   el.redLight     = document.getElementById('red-light');
   el.sysMsg       = document.getElementById('systemMessage');
   el.answerPanel  = document.getElementById('answerPanel');
@@ -86,11 +86,8 @@ function escapeHtml(s=''){ return String(s)
 // 設置所有 Firebase 監聽
 let currentChatRef = null;
 function setupAllListeners(){
-  // 老師出題
   onValue(ref(db,'teacher/currentQuestion'), snap=>handleQuestion(snap.val()));
-  // 初始大廳聊天室
   switchChat('lobby','大廳');
-  // 求救按鈕
   if(el.helpBtn) el.helpBtn.onclick = ()=> el.helpForm.classList.toggle('show');
 }
 
@@ -135,15 +132,13 @@ function showShort(qid,text){
 }
 
 // 隱藏答題面板
-function hideAnswer(){
-  if(el.answerPanel) el.answerPanel.style.display='none';
-}
+function hideAnswer(){ if(el.answerPanel) el.answerPanel.style.display='none'; }
 
 // 更新進度
 function resetProgress(){
   if(el.progressFill){
     el.progressFill.style.width='0%';
-    el.progressFill.textContent=\`0/\${TOTAL_STUDENTS}\`;
+    el.progressFill.textContent=`0/${TOTAL_STUDENTS}`;
   }
 }
 function updateProgress(qid){
@@ -152,58 +147,39 @@ function updateProgress(qid){
     const cnt=Object.values(d).filter(u=>u[qid]).length;
     const p=Math.round(cnt/TOTAL_STUDENTS*100);
     el.progressFill.style.width=p+'%';
-    el.progressFill.textContent=\`\${cnt}/\${TOTAL_STUDENTS}\`;
+    el.progressFill.textContent=`${cnt}/${TOTAL_STUDENTS}`;
   });
 }
 
 // 提交答案
 window.submitAnswer = (qid,ans)=> {
-  set(ref(db,\`answers/\${studentId}/\${qid}\`),{
+  set(ref(db,`answers/${studentId}/${qid}`),{
     studentId, name: studentName, answer:ans, time:new Date().toISOString()
   }).then(_=>{
     alert('✅ 答案送出'); hideAnswer(); el.redLight.classList.remove('active');
   }).catch(e=>alert('❌ '+e.message));
 };
-window.submitShort = qid=>{
-  const t=document.getElementById('shortAnswerInput')?.value.trim();
-  if(!t)return alert('請輸入文字');
-  window.submitAnswer(qid,t);
-};
+window.submitShort = qid=>{ const t=document.getElementById('shortAnswerInput')?.value.trim(); if(!t)return alert('請輸入文字'); window.submitAnswer(qid,t); };
 
 // 聊天室
 function switchChat(id,label){
   if(currentChatRef) off(currentChatRef);
-  currentChatRef=ref(db,\`chat/\${id}\`);
+  currentChatRef=ref(db,`chat/${id}`);
   el.chatList.innerHTML='<p><i>讀取中…</i></p>';
   onValue(currentChatRef,snap=>{
     const msgs=snap.val()||{};
     el.chatList.innerHTML=Object.values(msgs)
       .sort((a,b)=> new Date(a.time)-new Date(b.time))
-      .map(m=>\`
-        <div class="chat-item\${m.studentId===studentId?' self-message':''}">
-          <strong>\${escapeHtml(m.from)}</strong>: \${escapeHtml(m.text)}
-        </div>\`
+      .map(m=>`
+        <div class="chat-item${m.studentId===studentId?' self-message':''}">
+          <strong>${escapeHtml(m.from)}</strong>: ${escapeHtml(m.text)}
+        </div>`
       ).join('')||'<p><i>無訊息</i></p>';
     el.chatList.scrollTop=el.chatList.scrollHeight;
   });
 }
-window.sendChatMessage = ()=>{
-  const txt=el.chatInput.value.trim();
-  if(!txt)return alert('請輸入訊息');
-  push(ref(db,\`chat/\${sessionStorage.getItem('questionId')||'lobby'}\`),{
-    from:studentName,studentId,text:txt,time:new Date().toISOString()
-  });
-  el.chatInput.value='';
-};
+window.sendChatMessage = ()=>{ const txt=el.chatInput.value.trim(); if(!txt)return alert('請輸入訊息'); push(ref(db,`chat/${sessionStorage.getItem('questionId')||'lobby'}`),{ from:studentName,studentId,text:txt,time:new Date().toISOString() }); el.chatInput.value=''; };
 
 // 求救
-window.sendHelp = ()=>{
-  const msg=el.helpInput.value.trim();
-  if(!msg)return alert('請輸入求救內容');
-  set(ref(db,\`help/\${studentId}\`),{
-    from:studentName, studentId, class:studentClass,
-    message:msg, time:new Date().toISOString()
-  }).then(_=>
-    alert('✅ 求救送出'), el.helpForm.classList.remove('show')
-  ).catch(e=>alert('❌ '+e.message));
-};
+window.sendHelp = ()=>{ const msg=el.helpInput.value.trim(); if(!msg)return alert('請輸入求救內容'); set(ref(db,`help/${studentId}`),{ from:studentName, studentId, class:studentClass, message:msg, time:new Date().toISOString() }).then(_=> alert('✅ 求救送出'), el.helpForm.classList.remove('show')).catch(e=>alert('❌ '+e.message)); };
+// --- End of v6.2 ---
