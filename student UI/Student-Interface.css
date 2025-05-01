@@ -1,3 +1,4 @@
+/* START OF FILE Student-Interface.css */
 /* === 白貓工作室 - 學生作答 UI 最終版 CSS === */
 
 body {
@@ -21,28 +22,33 @@ body {
 .header h2 {
   font-size: 28px;
   color: #0d47a1;
+  text-align: center; /* Added */
 }
 
 .student-info {
-  font-size: 18px;
-  color: #555;
+  font-size: 16px; /* Adjusted */
+  color: #333; /* Adjusted */
   margin-top: 8px;
+  background-color: #e3f2fd; /* Added */
+  padding: 8px 12px; /* Added */
+  border-radius: 8px; /* Added */
+  margin-bottom: 15px; /* Added */
 }
 
 .light.red {
-  width: 18px;
-  height: 18px;
+  width: 14px; /* Adjusted */
+  height: 14px; /* Adjusted */
   border-radius: 50%;
   background-color: #bbb;
   display: inline-block;
-  margin-left: 8px;
+  margin-left: 5px; /* Adjusted */
   vertical-align: middle;
 }
 
 .light.red.active {
   animation: blinkRed 1s infinite;
   background-color: #f44336;
-  box-shadow: 0 0 10px #f44336;
+  box-shadow: 0 0 8px #f44336; /* Adjusted */
 }
 
 @keyframes blinkRed {
@@ -51,53 +57,61 @@ body {
   100% { opacity: 1; }
 }
 
-.message-board {
-  background-color: #ffffff;
-  border: 2px solid #bbdefb;
+/* Section styling */
+.message-board, .answer-panel, .help-box, .chat-box {
+  margin-bottom: 20px;
+  padding: 15px;
   border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 30px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.message-board {
+  background-color: #fffde7; /* Light Yellow */
+  border: 1px solid #fff9c4;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Softer shadow */
 }
 
 .message-board h3 {
-  color: #d32f2f;
-  font-size: 20px;
+  color: #f57f17; /* Dark Yellow/Orange */
+  font-size: 1.1em; /* Adjusted */
+  margin-top: 0;
   margin-bottom: 10px;
 }
 
 #systemMessage {
   font-size: 16px;
   font-weight: bold;
-  color: #c62828;
+  color: #c62828; /* Darker Red */
+  min-height: 1.2em; /* Ensure space */
 }
 
 .progress-bar {
   background-color: #eee;
   border-radius: 20px;
   overflow: hidden;
-  height: 24px;
+  height: 22px; /* Adjusted */
   margin-top: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 15px; /* Adjusted */
 }
 
 .progress-fill {
   height: 100%;
-  background-color: #66bb6a;
+  background-color: #66bb6a; /* Green */
   text-align: center;
   color: white;
   font-weight: bold;
-  line-height: 24px;
+  line-height: 22px; /* Match height */
   transition: width 0.5s ease;
+  font-size: 0.9em; /* Adjusted */
 }
 
 #messageList {
   font-size: 15px;
   color: #333;
   margin-top: 10px;
+  display: none; /* Hidden as per logic */
 }
 
-.message-item {
+.message-item { /* Style for potential future use */
   margin-bottom: 6px;
   padding: 6px 8px;
   background-color: #f1f8e9;
@@ -106,56 +120,74 @@ body {
 }
 
 .answer-panel {
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  margin-top: 30px;
+  background-color: #e8f5e9; /* Light Green */
+  border: 1px solid #c8e6c9;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-top: 20px; /* Adjusted */
+  display: none; /* Initially hidden */
 }
 
 .answer-panel h3 {
-  font-size: 20px;
-  color: #1565c0;
+  font-size: 1.1em; /* Adjusted */
+  color: #1b5e20; /* Dark Green */
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
 #questionText {
-  font-size: 18px;
+  font-size: 17px; /* Adjusted */
   margin-bottom: 16px;
+  line-height: 1.5; /* Improve readability */
 }
 
 #answerButtons {
   display: flex;
-  gap: 12px;
+  gap: 10px; /* Adjusted */
   flex-wrap: wrap;
+  margin-top: 10px; /* Added */
 }
 
+/* General Button Style (can override specific buttons) */
 button.send-btn {
-  padding: 12px 20px;
-  font-size: 16px;
-  background-color: #42a5f5;
+  padding: 10px 18px; /* Adjusted */
+  font-size: 1em; /* Adjusted */
+  background-color: #42a5f5; /* Blue */
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
-
-button.send-btn:hover {
-  background-color: #1976d2;
+button.send-btn:hover:not(:disabled) {
+  background-color: #1976d2; /* Darker Blue */
+}
+button:disabled { /* General disabled style */
+    background-color: #bdbdbd !important; /* Use important to override specifics if needed */
+    cursor: not-allowed !important;
 }
 
+
 .help-box {
-  background-color: #ffffff;
-  border: 2px solid #ffcdd2;
-  border-radius: 12px;
-  padding: 20px;
-  margin-top: 40px;
-  box-shadow: 0 2px 6px rgba(255, 82, 82, 0.1);
+  background-color: #fce4ec; /* Light Pink */
+  border: 1px solid #f8bbd0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-top: 20px; /* Adjusted */
+}
+/* Specific help button style */
+#help-button {
+    background-color: #ef5350; /* Red */
+}
+#help-button:hover {
+    background-color: #d32f2f; /* Darker Red */
+}
+
+#helpForm {
+    display: none; /* Hidden by default, JS toggles */
 }
 
 textarea#helpText, textarea#chatInput {
   width: 100%;
-  min-height: 80px;
+  min-height: 60px; /* Adjusted */
   padding: 10px;
   font-size: 16px;
   border-radius: 6px;
@@ -165,66 +197,128 @@ textarea#helpText, textarea#chatInput {
   resize: vertical;
 }
 
-.flash-text {
+#helpStatus { /* Flash text for help sent */
+  display: none; /* Hidden by default */
   animation: flash 1s infinite alternate;
-  color: #d32f2f;
+  color: #d32f2f; /* Red */
   font-weight: bold;
-  font-size: 16px;
+  font-size: 1em; /* Adjusted */
   margin-top: 10px;
   text-align: center;
 }
 
 @keyframes flash {
-  0% { opacity: 1; }
-  100% { opacity: 0.4; }
+  from { opacity: 1; }
+  to { opacity: 0.5; }
 }
 
 .chat-box {
-  background-color: #fff;
-  border: 2px solid #f48fb1;
-  border-radius: 16px;
-  padding: 20px;
-  margin-top: 30px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  background-color: #f3e5f5; /* Light Purple */
+  border: 1px solid #e1bee7;
+  border-radius: 12px; /* Match other boxes */
+  padding: 15px;
+  margin-top: 20px; /* Adjusted */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.chat-box h3 {
+  color: #4a148c; /* Dark Purple */
+  font-size: 1.1em; /* Adjusted */
+  margin-top: 0;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#chatContextLabel {
+    font-size: 0.8em; color: #6a1b9a; font-weight: normal; background-color: #e1bee7; padding: 2px 6px; border-radius: 4px;
 }
 
 #chatList {
-  max-height: 160px;
+  max-height: 180px; /* Adjusted */
   overflow-y: auto;
   margin-bottom: 10px;
-  font-size: 15px;
+  font-size: 0.95em; /* Adjusted */
   color: #333;
+  background-color: #fff; /* White background for chat area */
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 10px;
 }
+#chatList p { margin: 5px 0; } /* Spacing for messages like 'loading' */
+#chatList i { color: #888; } /* Italic grey text */
+
 
 .chat-item {
   margin-bottom: 8px;
   padding: 6px 10px;
-  background-color: #fce4ec;
+  background-color: #f1f1f1; /* Lighter grey */
   border-radius: 8px;
+  line-height: 1.4; /* Improve readability */
+  word-wrap: break-word; /* Prevent long words overflowing */
+}
+.chat-item strong { /* Sender name */
+    color: #555;
+    margin-right: 4px;
+}
+.chat-item span.chat-text { /* Message text */
+   /* Add styles if needed */
 }
 
-.chat-area {
-  max-height: 180px;
-  overflow-y: auto;
-  padding: 10px;
-  background-color: #fff0f5;
-  border: 2px solid #f8bbd0;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  font-size: 15px;
+/* Style for self messages */
+.chat-item.self-message {
+  background-color: #e1f5fe !important; /* Light blue */
+  border-left: 4px solid #03a9f4; /* Blue border */
 }
+.chat-item.self-message strong.chat-sender {
+  color: #0277bd; /* Darker blue for own name */
+}
+
 
 .chat-input-box {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  align-items: flex-end; /* Align items to bottom */
 }
 
 .chat-input-box textarea {
-  width: 100%;
-  padding: 10px;
-  font-size: 15px;
-  border-radius: 8px;
+  flex-grow: 1;
+  padding: 8px;
+  font-size: 0.95em;
+  border-radius: 6px;
   border: 1px solid #ccc;
   resize: vertical;
+  min-height: 40px;
+  line-height: 1.4; /* Match chat items */
 }
+/* Specific chat send button style */
+.chat-input-box button {
+    background-color: #7e57c2; /* Purple */
+    flex-shrink: 0; /* Prevent button from shrinking */
+    align-self: flex-end; /* Align button to bottom */
+     padding: 8px 15px; font-size: 0.95em; /* Match textarea height better */
+}
+.chat-input-box button:hover:not(:disabled) {
+    background-color: #5e35b1; /* Darker Purple */
+}
+
+
+/* Blinking animation for screenshot prompt button */
+.highlight-blink {
+    animation: blink 1.2s ease-in-out infinite alternate;
+}
+@keyframes blink {
+    from { opacity: 1; }
+    to { opacity: 0.7; transform: scale(1.02); }
+}
+
+.corner-cat {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  width: 55px;
+  opacity: 0.9;
+  z-index: 100;
+}
+
+/* END OF FILE Student-Interface.css */
