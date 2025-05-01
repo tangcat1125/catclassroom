@@ -1,161 +1,59 @@
-<!-- ✅ 修正檔案：rollcall.html（登入頁 UI 調整） -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>學生登入 - 白貓教室</title>
-  <style>
-    body {
-      font-family: "Microsoft JhengHei", sans-serif;
-      background-color: #e3f2fd;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 420px;
-      margin: 80px auto;
-      background-color: #fff;
-      border-radius: 12px;
-      padding: 32px 24px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    }
-    h2 {
-      text-align: center;
-      color: #0d47a1;
-      margin-bottom: 24px;
-    }
-    label {
-      display: block;
-      font-size: 16px;
-      margin-top: 16px;
-      color: #333;
-    }
-    input, select {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-sizing: border-box;
-    }
-    button {
-      width: 100%;
-      margin-top: 28px;
-      padding: 14px;
-      font-size: 18px;
-      background-color: #42a5f5;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #1976d2;
-    }
-    .note {
-      text-align: center;
-      margin-top: 16px;
-      font-size: 15px;
-      color: green;
-    }
-    .corner-cat {
-      position: fixed;
-      bottom: 8px;
-      right: 8px;
-      width: 60px;
-      opacity: 0.9;
-    }
-  </style>
+  <title>學生登入 - 白貓工作室</title>
+  <link rel="stylesheet" href="rollcall-style.css" />
 </head>
 <body>
   <div class="container">
-    <h2>學生登入</h2>
-    <label for="mode">我是...</label>
-    <select id="mode" onchange="toggleMode()">
-      <option value="self">本班學生</option>
-      <option value="guest">其他班來賓</option>
-    </select>
-
-    <label for="name">請輸入您的暱稱或本名：</label>
-    <input type="text" id="name" placeholder="如：小熊 / Lily / Quentin" />
-
-    <div id="seat-box">
-      <label for="seat">請輸入您的座號（數字）：</label>
-      <input type="number" id="seat" min="1" max="50" />
-    </div>
-
-    <button onclick="submitLogin()">登入教室</button>
-    <div id="result" class="note"></div>
+    <h1>學生登入</h1>
+    <form id="loginForm">
+      <div class="field">
+        <label for="classInput">班級：</label>
+        <input id="classInput" type="text" placeholder="例如：六年1班" required />
+      </div>
+      <div class="field">
+        <label for="nameInput">姓名：</label>
+        <input id="nameInput" type="text" placeholder="例如：米米" required />
+      </div>
+      <div class="field">
+        <label for="seatInput">座號：</label>
+        <input id="seatInput" type="number" placeholder="例如：1" min="1" required />
+      </div>
+      <button type="submit" class="btn-login">登入並進入作答區</button>
+    </form>
   </div>
 
-  <img src="cat.png" alt="cat" class="corner-cat" />
+  <script>
+    // 當 DOM 完全載入後，綁定表單提交事件
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('loginForm');
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        const cls  = document.getElementById('classInput').value.trim();
+        const name = document.getElementById('nameInput').value.trim();
+        const seat = document.getElementById('seatInput').value.trim();
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+        if (!cls || !name || !seat) {
+          alert('請完整輸入「班級」、「姓名」、「座號」！');
+          return;
+        }
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
-      authDomain: "catclassroom-login.firebaseapp.com",
-      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "catclassroom-login",
-      storageBucket: "catclassroom-login.appspot.com",
-      messagingSenderId: "123487233181",
-      appId: "1:123487233181:web:aecc2891dc2d1096962074"
-    };
+        // 組成 studentId 與 studentClass
+        const studentId    = `${cls}-${seat}`;
+        const studentClass = `${cls} ${seat}號`;
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+        // 存入 sessionStorage
+        sessionStorage.setItem('studentId', studentId);
+        sessionStorage.setItem('studentName', name);
+        sessionStorage.setItem('studentClass', studentClass);
 
-    window.toggleMode = function () {
-      const mode = document.getElementById("mode").value;
-      const seatBox = document.getElementById("seat-box");
-      if (mode === "self") {
-        seatBox.innerHTML = `
-          <label for="seat">請輸入您的座號（數字）：</label>
-          <input type="number" id="seat" min="1" max="50" />
-        `;
-      } else {
-        seatBox.innerHTML = `
-          <label for="seat">請選擇您的外班代號：</label>
-          <select id="seat">
-            ${Array.from({ length: 30 }, (_, i) => `<option value="G${i + 1}">G${i + 1}</option>`).join("")}
-          </select>
-        `;
-      }
-    }
-
-    window.submitLogin = async function () {
-      const name = document.getElementById("name").value.trim();
-      const seat = document.getElementById("seat").value;
-      const mode = document.getElementById("mode").value;
-      const id = (mode === "self") ? seat.padStart(2, "0") : seat;
-
-      if (!name || !id) {
-        alert("請完整填寫暱稱與座號！");
-        return;
-      }
-
-      const loginData = {
-        StudentName: name,
-        StudentID: id,
-        Timestamp: new Date().toISOString()
-      };
-
-      try {
-        await set(ref(db, `login/${id}`), loginData);
-        document.getElementById("result").innerText = `✅ 您已登入為 ${name}（${id}號），請等待老師出題...`;
-        sessionStorage.setItem("studentName", name);
-        sessionStorage.setItem("studentId", id);
-        sessionStorage.setItem("studentClass", mode === "self" ? "六年0班" : "外班訪客");
-        window.location.href = "StudentUi_Login.html";
-      } catch (error) {
-        console.error("❌ Firebase 寫入失敗：", error);
-        alert("登入失敗，請稍後再試！");
-      }
-    }
+        // 轉到作答頁面
+        window.location.href = 'StudentUi_Login.html';
+      });
+    });
   </script>
 </body>
 </html>
