@@ -1,31 +1,31 @@
-/* ✅ 對應新版 rollcall.html 的樣式設定 */
-
+/* START OF FILE rollcall-style.css */
 body {
   font-family: "Microsoft JhengHei", sans-serif;
   background-color: #e3f2fd;
   margin: 0;
-  padding: 0;
+  padding: 20px; /* Add padding */
 }
 
 .container {
   max-width: 420px;
-  margin: 80px auto;
+  margin: 50px auto; /* Adjust margin */
   background-color: #fff;
   border-radius: 12px;
-  padding: 32px 24px;
+  padding: 30px 25px; /* Adjust padding */
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
-h2 {
+h2 { /* Changed from h1 in HTML */
   text-align: center;
   color: #0d47a1;
-  margin-bottom: 24px;
+  margin-bottom: 25px; /* Adjust margin */
 }
 
 label {
   display: block;
   font-size: 16px;
-  margin-top: 16px;
+  margin-top: 15px; /* Adjust margin */
+  margin-bottom: 5px; /* Add margin */
   color: #333;
 }
 
@@ -33,16 +33,16 @@ input,
 select {
   width: 100%;
   padding: 12px;
-  margin-top: 6px;
   font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 8px;
   box-sizing: border-box;
+  margin-bottom: 10px; /* Adjust margin */
 }
 
 button {
   width: 100%;
-  margin-top: 28px;
+  margin-top: 25px; /* Adjust margin */
   padding: 14px;
   font-size: 18px;
   background-color: #42a5f5;
@@ -50,18 +50,35 @@ button {
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-button:hover {
+button:hover:not(:disabled) { /* Only apply hover when not disabled */
   background-color: #1976d2;
+}
+
+button:disabled { /* Style for disabled button */
+    background-color: #bdbdbd;
+    cursor: not-allowed;
 }
 
 .note {
   text-align: center;
-  margin-top: 16px;
+  margin-top: 15px; /* Adjust margin */
   font-size: 15px;
   color: green;
+  min-height: 1.2em; /* Ensure space for messages */
 }
+
+.note.error { /* Style for error messages */
+    color: red;
+    font-weight: bold;
+}
+
+input.invalid, select.invalid { /* Style for invalid inputs */
+    border-color: red !important;
+}
+
 
 .corner-cat {
   position: fixed;
@@ -70,3 +87,4 @@ button:hover {
   width: 60px;
   opacity: 0.9;
 }
+/* END OF FILE rollcall-style.css */
