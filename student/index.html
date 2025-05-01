@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生登入</title>
+    <!-- 連結 CSS 文件 (可選，我們先專注結構) -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 快速加入一些基本間距，讓版面不至於擠在一起 */
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f4; /* 淺灰色背景 */
+        }
+        .login-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 350px; /* 固定寬度 */
+        }
+        h1 {
+            text-align: center;
+            color: #333; /* 深灰色標題 */
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px; /* 表單群組間距 */
+        }
+        label {
+            display: block;
+            margin-bottom: 8px; /* 標籤與輸入框間距 */
+            color: #555; /* 標籤顏色 */
+            font-weight: bold;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc; /* 邊框 */
+            border-radius: 4px;
+            box-sizing: border-box; /* 讓 padding 不會撐大寬度 */
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff; /* 主題藍色 */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease; /* 懸停效果 */
+        }
+        button:hover {
+            background-color: #0056b3; /* 深一點的藍色 */
+        }
+         /* 座號區域的樣式 */
+        #seatArea {
+            min-height: 38px; /* 保持與輸入框/下拉選單相同的高度感 */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h1>學生登入</h1>
+
+        <!-- 我們可以用 div 包裹表單元素，方便管理 -->
+        <form id="loginForm">
+
+            <div class="form-group">
+                <label for="identitySelect">我是...</label>
+                <select id="identitySelect" name="identity">
+                    <option value="本班" selected>本班學生</option>
+                    <option value="他班">他班學生</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="nameInput">請輸入您的暱稱或本名：</label>
+                <input type="text" id="nameInput" name="name" placeholder="如：小熊 / Lily / Quentin">
+            </div>
+
+            <div class="form-group">
+                <label for="seatInput">請輸入您的座號 (數字)：</label>
+                 <!-- 座號區域，初始顯示文字輸入框，稍後 JS 會動態修改 -->
+                <div id="seatArea">
+                     <input type="number" id="seatInput" name="seat" placeholder="請輸入座號數字">
+                </div>
+            </div>
+
+            <button type="button" id="loginButton">登入教室</button>
+
+        </form>
+    </div>
+
+    <!-- 連結 JavaScript 文件 (確保在 body 結尾引入) -->
+    <script src="login.js"></script>
+
+</body>
+</html>
