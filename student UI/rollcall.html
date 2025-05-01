@@ -1,62 +1,141 @@
-<!-- rollcall.html 版本:1.2.0 修正時間:2025-05-01 13:00 -->
+<!-- START OF FILE rollcall.html (v3 - 修正初始化檢查) -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>學生點名系統 (Rollcall)</title>
-  <link rel="stylesheet" href="rollcall-style.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>學生登入 - 白貓教室</title>
+  <!-- 引入 CSS -->
+  <link rel="stylesheet" href="rollcall-style.css" />
+  <!-- 內嵌基本樣式 -->
+  <style>
+     body { font-family: "Microsoft JhengHei", sans-serif; background-color: #e3f2fd; margin: 0; padding: 20px; }
+     .container { max-width: 420px; margin: 50px auto; background-color: #fff; border-radius: 12px; padding: 30px 25px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+     h2 { text-align: center; color: #0d47a1; margin-bottom: 25px; }
+     label { display: block; font-size: 16px; margin-top: 15px; margin-bottom: 5px; color: #333; }
+     input, select { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px; }
+     button { width: 100%; margin-top: 25px; padding: 14px; font-size: 18px; background-color: #42a5f5; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
+     button:hover:not(:disabled) { background-color: #1976d2; } /* 僅在非禁用時變色 */
+     button:disabled { background-color: #bdbdbd; cursor: not-allowed; } /* 禁用樣式 */
+     .note { text-align: center; margin-top: 15px; font-size: 15px; color: green; min-height: 1.2em; }
+     .error { color: red; font-weight: bold; } /* 錯誤訊息樣式 */
+     .corner-cat { position: fixed; bottom: 8px; right: 8px; width: 60px; opacity: 0.9; }
+     input.invalid, select.invalid { border-color: red !important; } /* 輸入錯誤提示 */
+  </style>
 </head>
 <body>
-  <header>
-    <h1>學生點名系統</h1>
-  </header>
-  <main>
-    <form id="rollcall-form">
-      <div class="form-group">
-        <label for="classType">所屬班級：</label>
-        <select id="classType" name="classType" required>
-          <option value="">請選擇</option>
-          <option value="本班">本班</option>
-          <option value="其他班級">其他班級</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="studentName">姓名：</label>
-        <input type="text" id="studentName" name="studentName" required/>
-      </div>
-      <div class="form-group">
-        <label for="seatNumber">座號：</label>
-        <input type="text" id="seatNumber" name="seatNumber" pattern="\d+" required/>
-      </div>
-      <button type="submit">開始</button>
-    </form>
-  </main>
+  <div class="container">
+    <h2>學生登入</h2>
+    <label for="mode">我是...</label>
+    <select id="mode" onchange="toggleMode()">
+      <option value="self" selected>本班學生</option>
+      <option value="guest">其他班來賓</option>
+    </select>
+
+    <label for="name">請輸入您的暱稱或本名：</label>
+    <input type="text" id="name" placeholder="如：小熊 / Lily / Quentin" required />
+
+    <div id="seat-box">
+      <label for="seat">請輸入您的座號（數字）：</label>
+      <input type="number" id="seat" min="1" max="99" required /> <!-- 最大座號可調整 -->
+    </div>
+
+    <button type="button" id="loginButton" onclick="submitLogin()">登入教室</button>
+    <div id="result" class="note"></div>
+  </div>
+
+  <img src="cat.png" alt="cat" class="corner-cat" onerror="this.style.display='none';" />
+
+  <!-- Firebase 初始化 -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"></script>
   <script>
-    (function(){
-      const TEACHER_CLASS = '602'; // 請依實際班級修改
-      document.getElementById('rollcall-form').addEventListener('submit', function(e){
-        e.preventDefault();
-        const classType = document.getElementById('classType').value;
-        const studentName = document.getElementById('studentName').value.trim();
-        const seat = document.getElementById('seatNumber').value.trim();
-        if (!classType) { alert('請選擇所屬班級！'); return; }
-        if (!studentName) { alert('請輸入姓名！'); return; }
-        if (!seat) { alert('請輸入座號！'); return; }
-        let studentId, studentClass;
-        if (classType === '本班') {
-          studentId = TEACHER_CLASS + seat;
-          studentClass = TEACHER_CLASS + ' ' + seat + '號';
-        } else {
-          studentId = 'G' + seat;
-          studentClass = 'G' + seat;
-        }
-        sessionStorage.setItem('studentId', studentId);
-        sessionStorage.setItem('studentName', studentName);
-        sessionStorage.setItem('studentClass', studentClass);
-        window.location.href = 'StudentUi_Login.html';
-      });
-    })();
+    // --- Firebase 配置 ---
+    // ** 【極度重要】請從你的 Firebase 控制台複製真實配置，替換下面的範例值！**
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY", // <-- 替換成你的
+      authDomain: "YOUR_AUTH_DOMAIN",  // <-- 替換成你的
+      databaseURL: "YOUR_DATABASE_URL", // <-- 替換成你的，確認 URL 完全正確
+      projectId: "YOUR_PROJECT_ID", // <-- 替換成你的
+      storageBucket: "YOUR_STORAGE_BUCKET", // <-- 替換成你的
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // <-- 替換成你的
+      appId: "YOUR_APP_ID" // <-- 替換成你的 Web App ID
+    };
+
+    // --- 初始化 Firebase ---
+    let db = null; // 初始化為 null
+    const loginButton = document.getElementById('loginButton');
+    const resultDiv = document.getElementById("result");
+
+    try {
+         const app = initializeApp(firebaseConfig);
+         db = getDatabase(app);
+         console.log("Rollcall Firebase Initialized Successfully!");
+         if (resultDiv) resultDiv.textContent = '請輸入資訊登入'; // 初始化成功提示
+    } catch (e) {
+         console.error("Rollcall Firebase Initialization Failed:", e);
+         const errorMsg = `登入服務初始化失敗！請檢查 Firebase 配置或網路。\n錯誤: ${e.message}`;
+         if (resultDiv) { resultDiv.textContent = errorMsg; resultDiv.classList.add('error'); }
+         alert(errorMsg);
+         if(loginButton) loginButton.disabled = true;
+    }
+
+    // --- 切換模式函數 ---
+    window.toggleMode = function () {
+      const mode = document.getElementById("mode").value;
+      const seatBox = document.getElementById("seat-box");
+      if (mode === "self") {
+        seatBox.innerHTML = `<label for="seat">請輸入您的座號（數字）：</label><input type="number" id="seat" min="1" max="99" required />`;
+      } else {
+        seatBox.innerHTML = `<label for="seat">請選擇您的外班代號：</label><select id="seat" required><option value="" disabled selected>請選擇...</option>${Array.from({ length: 30 }, (_, i) => `<option value="G${i + 1}">G${i + 1}</option>`).join("")}</select>`;
+      }
+      const seatElement = document.getElementById('seat');
+      if (seatElement) seatElement.classList.remove('invalid');
+    }
+
+    // --- 登入函數 ---
+    window.submitLogin = async function () {
+      if (!db) { alert("登入服務尚未初始化成功，請稍候！"); return; }
+      const nameInput = document.getElementById("name");
+      const seatElement = document.getElementById("seat");
+      const mode = document.getElementById("mode").value;
+      nameInput.classList.remove('invalid'); seatElement.classList.remove('invalid');
+      const name = nameInput.value.trim(); const seatValue = seatElement.value;
+      let isValid = true;
+      if (!name) { nameInput.classList.add('invalid'); isValid = false; }
+      if (!seatValue) { seatElement.classList.add('invalid'); isValid = false; }
+      if (!isValid) { alert("請完整填寫所有欄位！"); return; }
+
+      let studentId; let studentClassForStorage;
+      if (mode === "self") {
+          if (!/^\d+$/.test(seatValue) || parseInt(seatValue) < 1) { alert("座號請輸入有效的正整數！"); seatElement.classList.add('invalid'); return; }
+          studentId = seatValue.toString().padStart(2, "0");
+          const assumedClass = "預設班級"; // *** 請修改為你的預設班級名，或添加班級輸入框 ***
+          studentClassForStorage = `${assumedClass} ${studentId}號`;
+      } else {
+          studentId = seatValue; studentClassForStorage = `訪客 (${studentId})`;
+      }
+      console.log(`準備登入: ID=${studentId}, Name=${name}, ClassForStorage=${studentClassForStorage}`);
+      const loginData = { StudentName: name, StudentID: studentId, Timestamp: new Date().toISOString() };
+      if (loginButton) loginButton.disabled = true;
+      if (resultDiv) { resultDiv.textContent = "登入中..."; resultDiv.classList.remove('error'); }
+
+      try {
+        const loginRef = ref(db, `login/${studentId}`); await set(loginRef, loginData);
+        console.log("Firebase 寫入成功！");
+        if (resultDiv) resultDiv.innerText = `✅ 您已登入為 ${name} (${studentClassForStorage})，將跳轉...`;
+        sessionStorage.setItem("studentId", studentId); sessionStorage.setItem("studentName", name);
+        sessionStorage.setItem("studentClass", studentClassForStorage); // 存 "班級 座號號"
+        setTimeout(() => { window.location.href = "StudentUi_Login.html"; }, 1200);
+      } catch (error) {
+        console.error("❌ Firebase 寫入失敗：", error);
+        const errorMsg = `❌ 登入失敗: ${error.message}`;
+        if (resultDiv) { resultDiv.textContent = errorMsg; resultDiv.classList.add('error'); }
+        alert("登入失敗，請檢查網路、Firebase規則或稍後再試！");
+        if (loginButton) loginButton.disabled = false;
+      }
+    }
   </script>
 </body>
 </html>
+<!-- END OF FILE rollcall.html (v3 - 修正初始化檢查) -->
