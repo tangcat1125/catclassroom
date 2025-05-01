@@ -1,0 +1,138 @@
+<!-- START OF FILE StudentUi_Login.html (v4 - 加入聊天室標籤) -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>學生作答區 - 白貓教室</title>
+    <!-- 引入你的主要 CSS 檔案 -->
+    <link rel="stylesheet" href="Student-Interface.css" />
+    <!-- 可以加入一些內嵌的 CSS 樣式來輔助 -->
+    <style>
+      /* 基本樣式，可以移到 Student-Interface.css */
+      body { font-family: "Microsoft JhengHei", sans-serif; background-color: #eef7ff; margin: 0; padding: 15px; }
+      .student-ui { max-width: 700px; margin: auto; background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+      .header h2 { text-align: center; color: #0d47a1; margin-bottom: 15px; }
+      .student-info { background-color: #e3f2fd; padding: 8px 12px; border-radius: 8px; margin-bottom: 15px; font-size: 0.95em; color: #333; }
+      .message-board, .answer-panel, .help-box, .chat-box { margin-bottom: 20px; padding: 15px; border-radius: 12px; }
+      .message-board { background-color: #fffde7; border: 1px solid #fff9c4; }
+      .message-board h3 { color: #f57f17; margin-top: 0; font-size: 1.1em; }
+      .answer-panel { background-color: #e8f5e9; border: 1px solid #c8e6c9; }
+      .answer-panel h3 { color: #1b5e20; margin-top: 0; font-size: 1.1em; }
+      .help-box { background-color: #fce4ec; border: 1px solid #f8bbd0; }
+      .chat-box { background-color: #f3e5f5; border: 1px solid #e1bee7; }
+      .chat-box h3 { color: #4a148c; margin-top: 0; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center; }
+      #chatContextLabel { font-size: 0.8em; color: #6a1b9a; font-weight: normal; background-color: #e1bee7; padding: 2px 6px; border-radius: 4px;} /* 聊天室標籤樣式 */
+      .chat-area { max-height: 200px; /* 稍微增加高度 */ overflow-y: auto; padding: 10px; background-color: #fff; border: 1px solid #eee; border-radius: 8px; margin-bottom: 10px; font-size: 0.95em; }
+      .chat-item { margin-bottom: 8px; padding: 5px 8px; border-radius: 6px; background-color: #f9f9f9; }
+      .chat-item.self-message { background-color: #e3f2fd !important; border-left: 3px solid #2196f3; } /* 自己訊息的樣式 */
+      .chat-sender { font-weight: bold; color: #666; margin-right: 5px; }
+      .chat-item.self-message .chat-sender { color: #1565c0; }
+      .chat-input-box { display: flex; gap: 8px; }
+      .chat-input-box textarea { flex-grow: 1; padding: 8px; font-size: 0.95em; border-radius: 6px; border: 1px solid #ccc; resize: vertical; min-height: 40px; }
+      button.send-btn { padding: 8px 15px; font-size: 0.95em; }
+      .progress-bar { background-color: #eee; border-radius: 20px; overflow: hidden; height: 22px; margin: 10px 0; }
+      .progress-fill { height: 100%; background-color: #66bb6a; text-align: center; color: white; font-weight: bold; line-height: 22px; transition: width 0.5s ease; font-size: 0.9em;}
+      textarea { width: 100%; box-sizing: border-box;} /* 確保 textarea 不會超出邊界 */
+      .highlight-blink { animation: blink 1.2s ease-in-out infinite alternate; } /* 截圖提示按鈕閃爍 */
+      @keyframes blink { from { opacity: 1; } to { opacity: 0.7; transform: scale(1.02); } }
+      .corner-cat { position: fixed; bottom: 10px; right: 10px; width: 55px; opacity: 0.9; z-index: 100; }
+    </style>
+  </head>
+
+  <body>
+    <div class="student-ui">
+      <div class="header">
+        <h2>學生作答區</h2>
+        <div class="student-info">
+          班級：<span id="student-class">...</span> |
+          姓名：<span id="student-name">...</span>
+          <div id="red-light" class="light red" style="width: 14px; height: 14px; margin-left: 5px;"></div> <!-- 紅燈樣式可能在 Student-Interface.css -->
+        </div>
+      </div>
+
+      <!-- 系統訊息與進度條 -->
+      <div class="message-board">
+        <h3>📢 系統訊息</h3>
+        <div id="systemMessage">等待老師出題中...</div>
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill" style="width: 0%">0 / ?</div> <!-- 初始顯示 -->
+        </div>
+        <!-- messageList 不再用於顯示答案，可以移除或留空備用 -->
+        <div id="messageList" style="display: none;"></div>
+      </div>
+
+      <!-- 動態作答區 (選擇/是非/簡答/截圖提示) -->
+      <div class="answer-panel" id="answerPanel" style="display: none;">
+        <h3 id="answerPanelTitle">請作答：</h3> <!-- 增加 ID 方便修改標題 -->
+        <div id="questionText"></div>
+        <div id="answerButtons"></div>
+      </div>
+
+      <!-- 求救區 -->
+      <div class="help-box">
+        <button id="help-button" class="send-btn" style="background-color: #ef5350;">🆘 我要求救</button>
+        <div id="helpForm" style="display: none; margin-top: 10px;">
+          <textarea id="helpText" placeholder="請輸入你遇到的問題..." rows="3" style="width: 100%; padding: 10px;"></textarea>
+          <button onclick="sendHelp()" class="send-btn" style="margin-top: 10px; background-color: #ef5350;">🚀 發送給老師</button>
+          <div id="helpStatus" class="flash-text" style="display: none; color: #d32f2f;">✅ 已傳送求救訊息</div>
+        </div>
+      </div>
+
+      <!-- 課程聊天室 -->
+      <div class="chat-box">
+        <h3>
+            課程聊天室
+            <!-- ** 新增：顯示當前聊天室上下文的標籤 ** -->
+            <span id="chatContextLabel" style="font-size: 0.8em; color: #777;">(載入中...)</span>
+        </h3>
+        <div id="chatList" class="chat-area">
+            <p style='color: grey; font-style: italic;'>正在連接聊天室...</p> <!-- 初始提示 -->
+        </div>
+        <div class="chat-input-box">
+          <textarea id="chatInput" placeholder="輸入聊天室訊息..." rows="2"></textarea>
+          <button onclick="sendChatMessage()" class="send-btn" style="background-color: #7e57c2;">送出聊天室訊息</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右下角小貓圖示 -->
+    <img src="cat.png" alt="白貓" class="corner-cat" onerror="this.style.display='none';" /> <!-- 加入 onerror 避免圖片載入失敗破版 -->
+
+    <!-- Firebase 初始化腳本 -->
+    <!-- ** 重要：確保這個腳本在 student-ui.js 之前載入 ** -->
+    <!-- ** 使用 compat 版本，因為 student-ui.js 可能用到舊的 API (window.db) ** -->
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+    <script>
+      // 你的 Firebase 設定物件
+      const firebaseConfig = {
+        apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+        authDomain: "catclassroom-login.firebaseapp.com",
+        databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "catclassroom-login",
+        storageBucket: "catclassroom-login.appspot.com",
+        messagingSenderId: "123487233181",
+        appId: "1:123487233181:web:aecc2891dc2d1096962074" // 確認這個 App ID 是學生端使用的
+      };
+      // 初始化 Firebase
+      try {
+        firebase.initializeApp(firebaseConfig);
+        // 將 database 實例掛載到 window 上，供 student-ui.js 使用 (舊方法)
+        window.db = firebase.database();
+        console.log("Firebase (compat) 初始化成功！");
+      } catch (e) {
+          console.error("Firebase 初始化失敗！", e);
+          alert("頁面初始化失敗，無法連接到後端服務，請檢查網路或聯繫管理員。");
+          // 可以考慮禁用頁面功能
+          document.body.innerHTML = "<h2 style='color: red; text-align: center; margin-top: 50px;'>頁面載入失敗！</h2>";
+      }
+
+    </script>
+
+    <!-- 載入你的學生介面邏輯腳本 -->
+    <script type="module" src="student-ui.js"></script>
+
+  </body>
+</html>
+<!-- END OF FILE StudentUi_Login.html (v4 - 加入聊天室標籤) -->
