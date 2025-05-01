@@ -10,14 +10,28 @@ import { getDatabase, ref, set, serverTimestamp } from "https://www.gstatic.com/
 // --- Firebase Configuration ---
 // ⚠️ 重要安全提醒：請務必替換成你的真實金鑰和 ID，並注意安全管理。
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY", // <--- 換成你的真實 API Key
-  authDomain: "YOUR_AUTH_DOMAIN", // <--- 換成你的 Auth Domain
-  databaseURL: "YOUR_DATABASE_URL", // <--- 換成你的 Database URL
-  projectId: "YOUR_PROJECT_ID", // <--- 換成你的 Project ID
-  storageBucket: "YOUR_STORAGE_BUCKET", // <--- 換成你的 Storage Bucket
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // <--- 換成你的 Sender ID
-  appId: "YOUR_APP_ID", // <--- 換成你的 App ID
-  measurementId: "YOUR_MEASUREMENT_ID" // <--- 你的 Measurement ID (可選)
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+  authDomain: "catclassroom-login.firebaseapp.com",
+  databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "catclassroom-login",
+  storageBucket: "catclassroom-login.firebasestorage.app",
+  messagingSenderId: "123487233181",
+  appId: "1:123487233181:web:aecc2891dc2d1096962074",
+  measurementId: "G-6C92GYSX3F"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 };
 
 // 步驟 3: 初始化 Firebase App 和 Database
