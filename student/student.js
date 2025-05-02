@@ -1,21 +1,26 @@
 // student.js - 學生作答區頁面腳本
 // 功能：顯示學生資訊、監聽聊天訊息、發送聊天訊息、求救功能
 
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, push, set, serverTimestamp } from "firebase/database";
+
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY", // 請替換為您的實際 API 金鑰
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // 請替換為您的專案 ID
-    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app", // 請替換為您的資料庫 URL
-    projectId: "YOUR_PROJECT_ID", // 請替換為您的專案 ID
-    storageBucket: "YOUR_PROJECT_ID.appspot.com", // 請替換為您的儲存桶名稱
-    messagingSenderId: "YOUR_SENDER_ID", // 請替換為您的訊息寄件者 ID
-    appId: "YOUR_APP_ID", // 請替換為您的應用程式 ID
-    measurementId: "YOUR_MEASUREMENT_ID" // 請替換為您的評估 ID
+  apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+  authDomain: "catclassroom-login.firebaseapp.com",
+  databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "catclassroom-login",
+  storageBucket: "catclassroom-login.firebasestorage.app",
+  messagingSenderId: "123487233181",
+  appId: "1:123487233181:web:aecc2891dc2d1096962074",
+  measurementId: "G-6C92GYSX3F"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 };
 
 // Initialize Firebase
