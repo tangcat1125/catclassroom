@@ -1,63 +1,186 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>白貓工作室 | 教師端監控介面</title>
-  <link rel="stylesheet" href="style.css" />
-  <!-- *** 加入 html2canvas 函式庫，讓截圖功能可以用 *** -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>白貓教師端 - 教室管理與派題系統</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <style>
+    body { background-color: #1a202c; color: #e2e8f0; font-family: 'Noto Sans TC', sans-serif; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .response-board { max-height: 400px; overflow-y: auto; }
+    .response-box { padding: 0.5rem; margin: 0.25rem 0; border-radius: 0.25rem; }
+    .green { background-color: #48bb78; }
+    .red { background-color: #f56565; }
+    .student-row span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+    #questionList .question-item { padding: 0.5rem; border-bottom: 1px solid #4a5568; }
+  </style>
 </head>
-<body>
-  <div class="container">
-    <!-- 左側控制面板 -->
-    <aside class="left">
-      <h2>教師控制面板</h2>
+<body class="p-4">
+  <header class="bg-yellow-200 text-gray-800 p-4 text-center rounded-lg mb-4">
+    <h1 class="text-2xl">白貓教師端</h1>
+    <p class="text-sm">教室管理與派題系統</p>
+  </header>
 
-      <!-- 截圖按鈕 (功能由 main.js 提供) -->
-      <button onclick="takeScreenshot()">擷取回應區畫面</button>
-      <br /><br />
-
-      <!-- QR Code 顯示區 -->
-      <img src="assets/qr-placeholder.png" alt="學生登入 QR Code (待產生)" onerror="this.alt='[QR 圖示載入失敗]'" width="100" />
-      <br />
-
-      <!-- 學生登入連結 -->
-      <label for="login-link" style="display: block; margin-top: 10px; font-weight: bold;">學生登入連結：</label>
-      <input type="text" id="login-link" value="https://tangcat1125.github.io/catclassroom/student UI/rollcall.html" readonly style="width: calc(100% - 12px); margin-bottom: 5px;" />
-      <br />
-
-      <!-- 控制按鈕 -->
-      <button onclick="copyLink()" title="複製學生登入連結">複製連結 (LNK)</button>
-      <button onclick="showQuestionPanel()" title="開啟題目設定面板 (尚未實作)">題目設定 (ASK)</button>
-      <button onclick="window.open('../task-system/task-center.html', '_blank')" title="開啟派題中心">開啟派題中心</button> <!-- 新增：直接開啟派題中心 -->
-
-
-      <!-- 學生狀態列表 (目前為靜態，應由 main.js 動態產生) -->
-      <div class="student-status-list">
-        <h4>學生狀態：</h4>
-        <!-- 這是靜態範例，實際應由 JS 監聽 /login 動態產生 -->
-        <div class="student-row" data-id="A"><span class="blue"></span> A</div>
-        <div class="student-row" data-id="B"><span class="blue"></span> B</div>
-        <div class="student-row" data-id="C"><span class="blue"></span> C</div>
-        <div class="student-row" data-id="D"><span class="blue"></span> D</div>
-        <div class="student-row" data-id="E"><span class="blue"></span> E</div>
-        <div class="student-row" data-id="F"><span class="blue"></span> F</div>
-        <!-- 未來由 main.js 動態增加 -->
-      </div>
-    </aside>
-
-    <!-- 右側回應顯示區 -->
-    <main class="right">
-      <h2>學生回應區</h2>
-      <div class="response-board">
-        <!-- 學生回答訊息將由 main.js 動態顯示於此 -->
-        <p>老師尚未出題或正在等待學生回應...</p>
-      </div>
-    </main>
+  <!-- 導航標籤 -->
+  <div class="flex space-x-4 mb-4">
+    <button id="tabClassroom" class="tab-btn bg-blue-500 text-white px-4 py-2 rounded">教室管理</button>
+    <button id="tabQuestionWizard" class="tab-btn bg-blue-500 text-white px-4 py-2 rounded">出題小精靈</button>
+    <button id="tabQuestionCenter" class="tab-btn bg-blue-500 text-white px-4 py-2 rounded">派題中心</button>
   </div>
 
-  <!-- 載入主要的 JavaScript 檔案 -->
+  <!-- 教室管理內容 -->
+  <div id="classroomContent" class="tab-content active">
+    <div class="flex space-x-4 mb-4">
+      <button onclick="copyLink()" class="bg-green-500 text-white px-4 py-2 rounded">複製登入連結</button>
+      <button onclick="showQuestionPanel()" class="bg-purple-500 text-white px-4 py-2 rounded">出題面板</button>
+      <button onclick="takeScreenshot()" class="bg-gray-500 text-white px-4 py-2 rounded">擷圖</button>
+    </div>
+
+    <div class="flex">
+      <div class="w-1/2 pr-2">
+        <h2 class="text-xl mb-2">教師端面板</h2>
+        <input type="text" id="login-link" value="https://tangcat1125.github.io/catclassroom/student/" class="w-full p-2 mb-2 bg-gray-800 text-white rounded" readonly>
+        <div class="response-board bg-gray-800 p-2 rounded"></div>
+      </div>
+      <div class="w-1/2 pl-2">
+        <h2 class="text-xl mb-2">學生狀態</h2>
+        <div class="student-status-list bg-gray-800 p-2 rounded"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 出題小精靈內容 -->
+  <div id="questionWizardContent" class="tab-content">
+    <section class="wizard-section">
+      <h2 class="text-xl mb-2">1. 產生 AI 出題指令</h2>
+      <p class="mb-2">請選擇條件，我們會產生一段指令，讓您貼到 AI 工具 (如 ChatGPT, Gemini) 來生成題目。</p>
+
+      <form id="wizardForm" onsubmit="return false;">
+        <label class="block mb-1">學程：</label>
+        <select id="wizardCourseLevel" class="w-full p-2 mb-2 bg-gray-800 text-white rounded">
+          <option value="國小中年級">國小中年級</option>
+          <option value="國小高年級">國小高年級</option>
+          <option value="國中">國中</option>
+          <option value="高中">高中</option>
+        </select>
+        <label class="block mb-1">科目：</label>
+        <select id="wizardSubject" class="w-full p-2 mb-2 bg-gray-800 text-white rounded">
+          <option value="國語">國語</option>
+          <option value="數學">數學</option>
+          <option value="自然">自然</option>
+          <option value="社會">社會</option>
+          <option value="英文">英文</option>
+        </select>
+        <label class="block mb-1">出題主題：</label>
+        <input type="text" id="wizardTopic" placeholder="例如：臺灣的地形、分數的加減、光合作用" class="w-full p-2 mb-2 bg-gray-800 text-white rounded">
+        <label class="block mb-1">選擇題型：</label>
+        <select id="promptType" class="w-full p-2 mb-2 bg-gray-800 text-white rounded">
+          <option value="truefalse">是非題</option>
+          <option value="choice">選擇題</option>
+          <option value="multichoice">複選題</option>
+          <option value="shortanswer">簡答題</option>
+          <option value="calculation">計算題</option>
+        </select>
+        <label class="block mb-1">生成題數：</label>
+        <select id="numQuestions" class="w-full p-2 mb-2 bg-gray-800 text-white rounded">
+          <option value="3" selected>3 題</option>
+          <option value="4">4 題</option>
+          <option value="5">5 題</option>
+          <option value="6">6 題</option>
+          <option value="7">7 題</option>
+          <option value="8">8 題</option>
+          <option value="9">9 題</option>
+          <option value="10">10 題</option>
+        </select>
+        <button type="button" onclick="generateInstruction()" class="bg-green-500 text-white px-4 py-2 rounded">🚀 生成 AI 指令</button>
+      </form>
+
+      <div id="generatedInstructionSection" style="display: none; margin-top: 20px;">
+        <h3 class="text-lg mb-1">🤖 生成的 AI 指令：</h3>
+        <textarea id="generatedInstruction" rows="12" readonly class="w-full p-2 bg-gray-800 text-white rounded"></textarea>
+        <button type="button" onclick="copyInstruction()" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">📋 複製指令</button>
+      </div>
+
+      <div id="aiToolsSection" style="display: none; margin-top: 20px;">
+        <h3 class="text-lg mb-1">貼到 AI 工具以生成題目：</h3>
+        <button onclick="useAI('ChatGPT', 'https://chat.openai.com/')" class="bg-green-500 text-white px-4 py-2 rounded">開啟 ChatGPT</button>
+        <button onclick="useAI('Grok3', 'https://grok.x.ai/')" class="bg-green-500 text-white px-4 py-2 rounded">開啟 Grok</button>
+        <button onclick="useAI('Gemini', 'https://gemini.google.com/')" class="bg-green-500 text-white px-4 py-2 rounded">開啟 Gemini</button>
+        <p class="text-sm text-gray-400 mt-1">提醒：點擊上方按鈕會先嘗試複製指令，再開啟新分頁。</p>
+      </div>
+    </section>
+
+    <hr class="my-4 border-gray-600">
+
+    <section class="bulk-question-section">
+      <h2 class="text-xl mb-2">2. 貼上 AI 生成的題目 (或手動輸入)</h2>
+      <p class="mb-2">將 AI 工具生成的題目貼到下方，或手動輸入。請確保格式符合要求 (答案標記在前)。</p>
+      <small class="text-gray-400">※ 每一行一題。是非題：(○)/(×) 開頭；選擇題：(正確選項代號) 開頭；複選題：(選項,選項) 開頭；簡答題：(參考答案) 開頭；計算題：(答案數值) 開頭。</small>
+      <textarea id="bulkQuestionInput" rows="15" placeholder="(○) 太陽從東邊升起。\n(B) 台灣最高的山是？ (A) 阿里山 (B) 玉山 (C) 合歡山 (D) 陽明山\n(15) 計算 3 * 5 = ?" class="w-full p-2 mb-2 bg-gray-800 text-white rounded"></textarea>
+
+      <h2 class="text-xl mb-2">3. 設定題目屬性並儲存</h2>
+      <label class="block mb-1">出題日期：</label>
+      <input type="date" id="questionDate" class="w-full p-2 mb-2 bg-gray-800 text-white rounded">
+      <label class="block mb-1">學程：</label>
+      <select id="courseLevel" class="w-full p-2 mb-2 bg-gray-800 text-white rounded">
+        <option value="國小中年級">國小中年級</option>
+        <option value="國小高年級">國小高年級</option>
+        <option value="國中">國中</option>
+        <option value="高中">高中</option>
+      </select>
+      <label class="block mb-1">科目：</label>
+      <select id="subject" class="w-full p-2 mb-2 bg-gray-800 text-white rounded">
+        <option value="國語">國語</option>
+        <option value="數學">數學</option>
+        <option value="自然">自然</option>
+        <option value="社會">社會</option>
+        <option value="英文">英文</option>
+      </select>
+      <button id="saveBulkQuestionsBtn" onclick="saveBulkQuestions()" class="bg-blue-500 text-white px-4 py-2 rounded">💾 儲存全部題目到 Firebase</button>
+    </section>
+  </div>
+
+  <!-- 派題中心內容 -->
+  <div id="questionCenterContent" class="tab-content">
+    <div class="filter-section mb-4">
+      <h2 class="text-xl mb-2">🔍 題目篩選器</h2>
+      <label class="block mb-1">出題日期：</label>
+      <input type="date" id="filterDate" class="w-full p-2 mb-2 bg-gray-800 text-white rounded">
+      <label class="block mb-1">學程：</label>
+      <select id="filterCourseLevel" class="w-full p-2 mb-2 bg-gray-800 text-white rounded">
+        <option value="">全部</option>
+        <option value="國小中年級">國小中年級</option>
+        <option value="國小高年級">國小高年級</option>
+        <option value="國中">國中</option>
+        <option value="高中">高中</option>
+      </select>
+      <label class="block mb-1">科目：</label>
+      <select id="filterSubject" class="w-full p-2 mb-2 bg-gray-800 text-white rounded">
+        <option value="">全部</option>
+        <option value="國語">國語</option>
+        <option value="數學">數學</option>
+        <option value="自然">自然</option>
+        <option value="社會">社會</option>
+        <option value="英文">英文</option>
+        <option value="其他">其他</option>
+      </select>
+      <button id="filterBtn" class="bg-green-500 text-white px-4 py-2 rounded">🔎 篩選題目</button>
+    </div>
+
+    <section class="question-bank">
+      <h2 class="text-xl mb-2">題目清單</h2>
+      <div id="questionList" class="bg-gray-800 p-2 rounded"></div>
+    </section>
+  </div>
+
+  <footer class="mt-4 text-center">
+    <button onclick="window.location.href='https://tangcat1125.github.io/catclassroom/'" class="bg-gray-500 text-white px-4 py-2 rounded">
+      <img src="cat-paw-icon.png" alt="返回首頁" width="24" height="24"> 返回首頁
+    </button>
+  </footer>
+
   <script type="module" src="main.js"></script>
 </body>
 </html>
