@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>學生端 - 擷圖標註作答</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body class="bg-blue-50 p-6 text-gray-800 font-sans">
+  <header class="text-center mb-6">
+    <h1 class="text-2xl font-bold">📝 擷圖標註作答</h1>
+    <p class="text-sm text-gray-600">請在下方圖片上作答並提交</p>
+  </header>
+
+  <section class="bg-white p-4 rounded shadow mb-6">
+    <h2 class="text-lg font-semibold mb-2">題目截圖</h2>
+    <div id="taskImageWrapper" class="mb-2">
+      <p class="text-gray-400 italic">（等待教師派送擷圖...）</p>
+    </div>
+
+    <canvas id="drawingCanvas" class="border rounded w-full max-w-md mx-auto hidden"></canvas>
+  </section>
+
+  <div class="text-center">
+    <button id="submitBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded" disabled>✅ 提交作答</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+      authDomain: "catclassroom-login.firebaseapp.com",
+      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "catclassroom-login",
+      storageBucket: "catclassroom-login.appspot.com",
+      messagingSenderId: "123487233181",
+      appId: "1:123487233181:web:aecc2891dc2d1096962074"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const taskRef = ref(db, "teacher/currentScreenshotAnnotationTask");
+    const taskImageWrapper = document.getElementById("taskImageWrapper");
+    const canvas = document.getElementById("drawingCanvas");
+    const ctx = canvas.getContext("2d");
+    const submitBtn = document.getElementById("submitBtn");
+
+    // 學生資料從 localStorage 或預設測試
+    const studentInfo = JSON.parse(localStorage.getItem('studentInfo')) || {
+      classType: "六甲",
+      seat: "13",
+      name: "米米"
+    };
+
+    let drawing = false;
+    let img = new Image();
+
+    function enableDrawing() {
+      canvas.addEventListener("mousedown", () => drawing = true);
+      canvas.addEventListener("mouseup", () => drawing = false);
+      canvas.addEventListener("mouseout", () => drawing = false);
+      canvas.addEventListener("mousemove", draw);
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      ctx.fillStyle = "#000000";
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    // 監聽老師的擷取任務
+    onValue(taskRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && data.image) {
+        taskImageWrapper.innerHTML = '';
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          canvas.classList.remove("hidden");
+          submitBtn.disabled = false;
+        };
+        img.src = data.image;
+        taskImageWrapper.appendChild(img);
+        enableDrawing();
+      }
+    });
+
+    // 提交畫面內容到 Firebase
+    submitBtn.addEventListener("click", async () => {
+      const base64 = canvas.toDataURL("image/png");
+      const timestamp = new Date().toISOString();
+      const refPath = `handwriting/${studentInfo.classType}/${studentInfo.seat}/${timestamp}`;
+      await set(ref(db, refPath), {
+        name: studentInfo.name,
+        image: base64,
+        timestamp: timestamp
+      });
+      alert("✅ 已提交作答！");
+    });
+  </script>
+</body>
+</html>
