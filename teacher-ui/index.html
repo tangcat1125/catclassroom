@@ -1,111 +1,122 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>白貓教師端 🐾</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <style>
-    body {
-      background-color: #eff6ff; /* 粉藍底 */
-      font-family: 'Noto Sans TC', sans-serif;
-    }
-    .scrollable-area {
-      max-height: 300px;
-      overflow-y: auto;
-      background-color: #fff;
-      border: 1px solid #e5e7eb;
-      padding: 0.75rem;
-      border-radius: 0.375rem;
-    }
-    .student-row {
-      display: flex;
-      align-items: center;
-      font-size: 0.9em;
-      padding: 0.25rem 0;
-    }
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin-right: 0.5rem;
-    }
-    .green { background-color: #34d399; }
-    .red { background-color: #f87171; }
-    .response-box {
-      padding: 0.5rem;
-      margin-bottom: 0.5rem;
-      border-radius: 0.375rem;
-      border-left: 4px solid;
-    }
-    .green-box {
-      background-color: #f0fdf4;
-      border-color: #4ade80;
-      color: #166534;
-    }
-    .red-box {
-      background-color: #fef2f2;
-      border-color: #f87171;
-      color: #991b1b;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>白貓教師端 v2.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #eff6ff;
+            color: #1f2937;
+        }
+        .scrollable-area {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            background-color: #ffffff;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .student-status-list .student-row {
+             padding: 0.3rem 0;
+             border-bottom: 1px solid #f3f4f6;
+             display: flex;
+             align-items: center;
+             font-size: 0.9em;
+        }
+         .student-status-list .student-row:last-child {
+             border-bottom: none;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        .status-dot.green { background-color: #34d399; }
+        .status-dot.red { background-color: #f87171; }
+        .response-board .response-box {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.9em;
+            border-left-width: 4px;
+        }
+        .response-box.green { background-color: #f0fdf4; border-color: #4ade80; color: #166534; }
+        .response-box.red   { background-color: #fef2f2; border-color: #f87171; color: #991b1b; }
+        .response-box.blue  { background-color: #eff6ff; border-color: #60a5fa; color: #1e40af; }
+        #teacherChatDisplay p {
+            padding: 0.3rem 0;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        #teacherChatDisplay p:last-child { border-bottom: none; }
+        #teacherChatDisplay small { color: #6b7280; margin-left: 0.5rem; font-size: 0.8em;}
+    </style>
 </head>
-<body class="p-4">
+<body class="p-4 md:p-6">
+    <header class="bg-gradient-to-r from-blue-200 via-purple-100 to-pink-200 text-gray-800 p-4 text-center rounded-lg mb-6 shadow-md">
+        <h1 class="text-2xl md:text-3xl font-bold">白貓教師端 🐾</h1>
+        <p class="text-xs md:text-sm text-gray-600">教室管理與派題系統 v2.0</p>
+    </header>
 
-  <!-- Header -->
-  <header class="bg-yellow-200 text-gray-800 p-4 text-center rounded-lg mb-6 shadow-md">
-    <h1 class="text-2xl font-bold">白貓教師端 🐾</h1>
-    <p class="text-sm text-gray-600">教室管理與派題系統</p>
-  </header>
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section class="lg:col-span-1 bg-white p-4 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4 border-b pb-2">控制面板</h2>
+            <div class="mb-4">
+                <label for="login-link" class="block text-sm font-medium text-gray-700 mb-1">學生登入連結:</label>
+                <div class="flex">
+                    <input type="text" id="login-link" value="https://tangcat1125.github.io/catclassroom/student/" class="flex-grow p-2 border border-gray-300 rounded-l-md text-sm bg-gray-50" readonly>
+                    <button id="copyLinkButton" title="複製連結" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-r-md text-sm">複製</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <button id="questionPanelButton" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm">出題面板</button>
+                <button id="screenshotButton" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded text-sm">擷圖</button>
+                <button id="classroomMgmtButton" class="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded text-sm">教室管理</button>
+                <button id="quizButton" class="bg-cyan-500 hover:bg-cyan-600 text-white px-3 py-2 rounded text-sm">出題小精靈</button>
+                <button id="dispatchButton" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded text-sm col-span-2">派題中心</button>
+            </div>
+            <div class="mt-auto text-center">
+                <button id="backButton" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm inline-flex items-center">
+                    <img src="https://cdn-icons-png.flaticon.com/128/109/109618.png" alt="返回" width="16" class="mr-2"> 返回
+                </button>
+            </div>
+        </section>
 
-  <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- 控制面板 -->
-    <section class="bg-white p-4 rounded-lg shadow">
-      <h2 class="text-xl font-semibold mb-3">控制面板</h2>
+        <section class="lg:col-span-1 bg-white p-4 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4 border-b pb-2">學生狀態與回應</h2>
+            <div class="mb-4">
+                <h3 class="text-lg font-medium text-gray-700 mb-2">在線學生列表:</h3>
+                <div id="studentStatusList" class="student-status-list scrollable-area">
+                    <p class="text-gray-400 text-sm italic">（等待學生登入...）</p>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-lg font-medium text-gray-700 mb-2">即時回應:</h3>
+                <div id="responseBoard" class="response-board scrollable-area">
+                    <p class="text-gray-400 text-sm italic">（等待學生回應...）</p>
+                </div>
+            </div>
+        </section>
 
-      <label class="block text-sm font-medium mb-1">學生登入連結:</label>
-      <div class="flex mb-3">
-        <input id="login-link" type="text" value="https://tangcat1125.github.io/catclassroom/student/" readonly class="flex-grow p-2 border border-gray-300 rounded-l bg-gray-50 text-sm" />
-        <button id="copyLinkButton" class="bg-blue-500 text-white px-3 py-2 rounded-r text-sm">複製</button>
-      </div>
+        <section class="lg:col-span-1 bg-white p-4 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4 border-b pb-2">課程聊天室</h2>
+            <div id="teacherChatDisplay" class="scrollable-area">
+                <p class="text-gray-400 text-sm italic">（等待聊天訊息...）</p>
+            </div>
+        </section>
+    </main>
 
-      <div class="grid grid-cols-2 gap-2 mb-4">
-        <button id="questionPanelButton" class="bg-purple-500 text-white px-3 py-2 rounded text-sm">出題面板</button>
-        <button id="screenshotButton" class="bg-indigo-500 text-white px-3 py-2 rounded text-sm">擷圖</button>
-        <button id="classroomMgmtButton" class="bg-teal-500 text-white px-3 py-2 rounded text-sm">教室管理</button>
-        <button id="quizButton" class="bg-cyan-500 text-white px-3 py-2 rounded text-sm">出題小精靈</button>
-        <button id="dispatchButton" onclick="location.href='task-system/task-center.html'" class="bg-orange-500 text-white px-3 py-2 rounded text-sm col-span-2">派題中心</button>
-      </div>
-
-      <div class="text-center">
-        <button id="backButton" class="bg-gray-500 text-white px-4 py-2 rounded text-sm inline-flex items-center">
-          <img src="https://cdn-icons-png.flaticon.com/128/109/109618.png" width="16" class="mr-2" /> 返回首頁
-        </button>
-      </div>
-    </section>
-
-    <!-- 學生狀態與反應 -->
-    <section class="bg-white p-4 rounded-lg shadow">
-      <h2 class="text-xl font-semibold mb-3">學生狀態</h2>
-      <div id="studentStatusList" class="scrollable-area student-status-list">
-        <p class="text-gray-400 text-sm italic">（等待學生登入...）</p>
-      </div>
-      <h2 class="text-xl font-semibold mt-6 mb-3">學生回應區</h2>
-      <div id="responseBoard" class="scrollable-area response-board">
-        <p class="text-gray-400 text-sm italic">（等待學生回應...）</p>
-      </div>
-    </section>
-
-    <!-- 聊天區 -->
-    <section class="bg-white p-4 rounded-lg shadow">
-      <h2 class="text-xl font-semibold mb-3">課程聊天室</h2>
-      <div id="teacherChatDisplay" class="scrollable-area">
-        <p class="text-gray-400 text-sm italic">（等待聊天訊息...）</p>
-      </div>
-    </section>
-  </main>
-
-  <!-- 主 JS -->
-  <script type="module" src="main.js"></script>
+    <script src="main.js" type="module"></script>
 </body>
 </html>
