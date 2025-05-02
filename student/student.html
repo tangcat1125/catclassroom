@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生作答區</title>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2>學生作答區</h2>
+        </header>
+        <div id="studentInfo">
+            <p>班級：<span id="infoClass">讀取中...</span> | 座號：<span id="infoSeat">讀取中...</span> | 姓名：<span id="infoName">讀取中...</span></p>
+        </div>
+        <div id="chatMessages">
+            </div>
+        <div id="chatInputArea">
+            <input type="text" id="chatInput" placeholder="輸入聊天室訊息...">
+            <button id="sendButton">送出</button>
+        </div>
+        <button id="sosButton"><i class="fas fa-exclamation-triangle"></i> 我要求救</button>
+        <footer>
+            <p>© 2024 白貓工作室. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        // student.js - 學生作答區頁面腳本
+        // 功能：顯示學生資訊、監聽聊天訊息、發送聊天訊息、求救功能
+
+        // 導入 Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, onValue, push, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        // Firebase 設定（與 login.js 相同）
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY", // 請替換為您的實際 API 金鑰
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // 請替換為您的專案 ID
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app", // 請替換為您的資料庫 URL
+            projectId: "YOUR_PROJECT_ID", // 請替換為您的專案 ID
+            storageBucket: "YOUR_PROJECT_ID.appspot.com", // 請替換為您的儲存桶名稱
+            messagingSenderId: "YOUR_SENDER_ID", // 請替換為您的訊息寄件者 ID
+            appId: "YOUR_APP_ID", // 請替換為您的應用程式 ID
+            measurementId: "YOUR_MEASUREMENT_ID" // 請替換為您的評估 ID
+        };
+
+        // 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        console.log("[Firebase] 初始化成功！");
+
+        // 全域變數，用於儲存學生資訊和當前題目 ID
+        let studentInfo = null;
+        let currentQuestionId = 'question1'; // 預設題目 ID
+
+        /**
+         * 從 localStorage 讀取學生資訊。
+         * 如果資訊不存在或格式錯誤，將重新導向到登入頁面。
+         */
+        function getStudentInfo() {
+            const storedStudentInfo = localStorage.getItem('studentInfo');
+            if (!storedStudentInfo) {
+                console.warn("[LocalStorage] 未找到學生資訊，重新導向到登入頁面。");
+                redirectToLogin();
+                return null; // 顯式返回 null，避免後續程式碼執行
+            }
+
+            try {
+                const parsedInfo = JSON.parse(storedStudentInfo);
+                if (!parsedInfo || typeof parsedInfo !== 'object' ||
+                    !parsedInfo.classType || !parsedInfo.name || !parsedInfo.seat) {
+                    throw new Error("儲存的學生資訊格式錯誤。");
+                }
+                return parsedInfo;
+            } catch (error) {
+                console.error("[LocalStorage] 解析學生資訊失敗:", error);
+                localStorage.removeItem('studentInfo'); // 清除無效的資訊
+                redirectToLogin();
+                return null; // 顯式返回 null
+            }
+        }
+
+        /**
+         * 將使用者重新導向到登入頁面。
+         */
+        function redirectToLogin() {
+            alert("請先登入。");
+            window.location.href = 'index.html';
+        }
+
+        /**
+        * 更新頂部資訊欄的 UI 元素。
+        * @param {object} studentInfo - 包含班級、座號和姓名的學生資訊物件。
+        */
+        function updateTopInfo(studentInfo) {
+            const infoClassElement = document.getElementById('infoClass');
+            const infoSeatElement = document.getElementById('infoSeat');
+            const infoNameElement = document.getElementById('infoName');
+
+            if (!infoClassElement || !infoSeatElement || !infoNameElement) {
+                const errorMessage = "[DOM] 錯誤：找不到頂部資訊欄的 span 元素。";
+                console.error(errorMessage);
+                alert("頁面結構錯誤，無法顯示學生資訊。請聯絡管理員。"); // 更友善的錯誤訊息
+                return;
+            }
+
+            infoClassElement.textContent = studentInfo.classType;
+            infoSeatElement.textContent = studentInfo.seat;
+            infoNameElement.textContent = studentInfo.name;
+            console.log("[UI] 頂部資訊欄已更新。");
+        }
+
+        /**
+         * 設定聊天訊息的監聽器。
+         * @param {string} questionId - 要監聽的題目 ID。
+         */
+        function setupChatListener(questionId) {
+            const chatRef = ref(database, `chat/${questionId}`);
+            onValue(chatRef, (snapshot) => {
+                const messages = snapshot.val();
+                const chatMessagesElement = document.getElementById('chatMessages'); // 確保在函數內部獲取
+                if (!chatMessagesElement) {
+                    console.error("[DOM] 錯誤：找不到聊天訊息顯示區域。");
+                    return;
+                }
+
+                chatMessagesElement.innerHTML = ''; // 清空聊天訊息區域
+                if (messages) {
+                    Object.values(messages).forEach(msg => {
+                        const messageElement = document.createElement('p');
+                        messageElement.innerHTML = `<strong>${msg.name}:</strong> ${msg.text} <small>(${new Date(msg.timestamp).toLocaleTimeString()})</small>`;
+                        chatMessagesElement.appendChild(messageElement);
+                    });
+                    chatMessagesElement.scrollTop = chatMessagesElement.scrollHeight; // 自動滾動到底部
+                } else {
+                    chatMessagesElement.innerHTML = '<p style="color: #888;">(聊天室尚無訊息...)</p>';
+                }
+            }, (error) => {
+                console.error("[Chat] 監聽錯誤:", error);
+                alert(`聊天訊息監聽發生錯誤：${error.message}`); // 向使用者顯示錯誤訊息
+            });
+        }
+
+        /**
+         * 發送聊天訊息到 Firebase。
+         * @param {string} text - 要發送的訊息內容。
+         * @param {string} senderName - 發送者的姓名。
+         * @param {string} questionId -  題目id
+         */
+        function sendChatMessage(text, senderName, questionId) {
+            const chatRef = ref(database, `chat/${questionId}`);
+            push(chatRef, {
+                name: senderName,
+                text: text,
+                timestamp: serverTimestamp()
+            }).then(() => {
+                console.log("[Chat] 訊息發送成功");
+            }).catch(error => {
+                console.error("[Chat] 發送失敗:", error);
+                alert(`發送訊息失敗：${error.message}`);
+            });
+        }
+
+        /**
+         * 處理求救按鈕的點擊事件，並將求救訊號發送到 Firebase。
+         * @param {string} studentName - 發送求救訊號的學生姓名。
+         * @param {number} studentSeat - 發送求救訊號的學生座號。
+         */
+        function sendSOSSignal(studentName, studentSeat) {
+            const helpRef = ref(database, `help/${studentSeat}`);
+            set(helpRef, {
+                name: studentName,
+                seat: studentSeat,
+                timestamp: serverTimestamp()
+            }).then(() => {
+                alert('求救訊號已發送！');
+                console.log("[SOS] 求救訊號發送成功");
+            }).catch(error => {
+                console.error("[SOS] 發送失敗:", error);
+                alert(`發送求救訊號失敗：${error.message}`);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("[DOM] student.html 文件載入完成.");
+
+            // 獲取學生資訊
+            studentInfo = getStudentInfo();
+            if (!studentInfo) {
+                return; // getStudentInfo 已經處理了重新導向，這裡直接返回
+            }
+
+            // 更新頂部資訊欄
+            updateTopInfo(studentInfo);
+
+            // 獲取聊天和求救相關的 DOM 元素
+            const chatInput = document.getElementById('chatInput');
+            const sendButton = document.getElementById('sendButton');
+            const sosButton = document.getElementById('sosButton');
+
+            if (!chatInput || !sendButton || !sosButton) {
+                console.error("[DOM] 錯誤：找不到聊天或求救相關元素。");
+                return;
+            }
+
+            // 初始化聊天監聽器
+            setupChatListener(currentQuestionId);
+
+            // 聊天功能：發送訊息
+            sendButton.addEventListener('click', () => {
+                const text = chatInput.value.trim();
+                if (text) {
+                    sendChatMessage(text, studentInfo.name, currentQuestionId);
+                    chatInput.value = ''; // 清空輸入框
+                } else {
+                    alert("請輸入訊息！");
+                }
+            });
+
+            // 支援 Enter 鍵發送訊息
+            chatInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    sendButton.click();
+                }
+            });
+
+            // 求救功能：點擊「我要求救」按鈕
+            sosButton.addEventListener('click', () => {
+                sendSOSSignal(studentInfo.name, studentInfo.seat);
+            });
+
+            // 動態監聽當前題目
+            const questionRef = ref(database, 'teacher/currentQuestion');
+            onValue(questionRef, (snapshot) => {
+                const question = snapshot.val();
+                if (question && question.id) {
+                    console.log("[Question] 當前題目 ID:", question.id);
+                    currentQuestionId = question.id; // 更新全域變數
+                    setupChatListener(currentQuestionId); // 動態切換聊天路徑
+                }
+            }, (error) => {
+                console.error("[Question] 監聽當前題目時發生錯誤:", error);
+                alert(`無法獲取當前題目：${error.message}。請重新整理頁面。`); // 提示用戶
+            });
+        });
+    </script>
+</body>
+</html>
