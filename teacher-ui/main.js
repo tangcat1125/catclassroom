@@ -1,7 +1,7 @@
-// main.js：白貓教師端互動邏輯（修正版，支援本班與他班）
+// main.js：白貓教師端互動邏輯（最終版，支援登入、求救與聊天監聽）
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onChildAdded, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
@@ -67,18 +67,17 @@ function flashUnknownStudent(id) {
 
 // 監聽學生登入（login 路徑）
 function setupLoginListener() {
-    const loginRef = ref(db, "login"); // 監聽整個 login 路徑
+    const loginRef = ref(db, "login");
     onValue(loginRef, (snapshot) => {
         const students = snapshot.val() || {};
         const list = document.querySelector(".student-status-list");
         list.innerHTML = ''; // 清空現有名單
 
-        // 重新構建學生名單
         Object.keys(students).forEach(identity => {
             Object.entries(students[identity]).forEach(([seat, data]) => {
-                const studentId = seat;
-                const studentName = data.name || studentId;
-                const displayText = `${studentName} (${studentId}) [${identity}]`;
+                const studentId = data.name || seat;
+                const studentName = data.name || seat;
+                const displayText = `${studentName} (${seat}) [${identity}]`;
                 const row = document.createElement("div");
                 row.className = "student-row";
                 row.innerHTML = `<span class="${knownStudents.has(studentId) ? 'green' : 'red'}"></span> ${displayText}`;
@@ -94,30 +93,59 @@ function setupLoginListener() {
     });
 }
 
-// 監聽求救訊號（help 路徑）
+// 監聽求救訊號（help 路徑，改為 help/{classType}/{seat}）
 function setupHelpListener() {
     const helpRef = ref(db, "help");
-    onChildAdded(helpRef, (snapshot) => {
-        const studentId = snapshot.key;
-        const data = snapshot.val();
-        const studentName = data.name || studentId;
-        const identity = data.classType || "未知"; // 假設未來從 help 獲取身份
+    onValue(helpRef, (snapshot) => {
+        const helpData = snapshot.val() || {};
+        Object.keys(helpData).forEach(classType => {
+            Object.entries(helpData[classType]).forEach(([seat, data]) => {
+                const studentName = data.name || seat;
+                const identity = classType;
 
-        // 在回應區顯示求救訊息
-        const timestamp = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : "未知時間";
-        addStudentResponse(studentName, `發送求救訊號！（${timestamp}）`, "red", identity);
+                // 在回應區顯示求救訊息
+                const timestamp = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : "未知時間";
+                addStudentResponse(studentName, `發送求救訊號！（${timestamp}）`, "red", identity);
+
+                // 更新名單（如果尚未添加）
+                if (!knownStudents.has(studentName)) {
+                    const list = document.querySelector(".student-status-list");
+                    const row = document.createElement("div");
+                    row.className = "student-row";
+                    row.innerHTML = `<span class="red"></span> ${studentName} (${seat}) [${identity}]`;
+                    list.appendChild(row);
+                    knownStudents.add(studentName);
+                }
+            });
+        });
+    }, (error) => {
+        console.error("[Help] 監聽錯誤:", error);
+    });
+}
+
+// 監聽聊天訊息（chat 路徑）
+function setupChatListener(questionId = "question1") {
+    const chatRef = ref(db, `chat/${questionId}`);
+    onChildAdded(chatRef, (snapshot) => {
+        const message = snapshot.val();
+        const studentName = message.name || "匿名";
+        const identity = "未知"; // 聊天訊息目前無身份信息，可從 login 推斷
+        const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : "未知時間";
+
+        // 在回應區顯示聊天訊息
+        addStudentResponse(studentName, `${message.text}（${timestamp}）`, "green", identity);
 
         // 更新名單（如果尚未添加）
-        if (!knownStudents.has(studentId)) {
+        if (!knownStudents.has(studentName)) {
             const list = document.querySelector(".student-status-list");
             const row = document.createElement("div");
             row.className = "student-row";
-            row.innerHTML = `<span class="red"></span> ${studentName} (${studentId}) [${identity}]`;
+            row.innerHTML = `<span class="green"></span> ${studentName} (未知) [${identity}]`;
             list.appendChild(row);
-            knownStudents.add(studentId);
+            knownStudents.add(studentName);
         }
     }, (error) => {
-        console.error("[Help] 監聽錯誤:", error);
+        console.error("[Chat] 監聽錯誤:", error);
     });
 }
 
@@ -153,4 +181,15 @@ function setupHandwritingListener() {
 // 初始化監聽
 setupLoginListener();
 setupHelpListener();
+setupChatListener(); // 監聽預設聊天室
 setupHandwritingListener();
+
+// 動態監聽當前題目（與學生端同步）
+const questionRef = ref(db, "teacher/currentQuestion");
+onValue(questionRef, (snapshot) => {
+    const question = snapshot.val();
+    if (question && question.id) {
+        console.log("[Question] 當前題目 ID:", question.id);
+        setupChatListener(question.id); // 動態切換聊天路徑
+    }
+});
