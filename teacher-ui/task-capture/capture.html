@@ -29,7 +29,28 @@
     </div>
   </section>
 
+  <div class="mt-6 text-center">
+    <a href="../index.html" class="inline-block bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">← 返回教師端</a>
+  </div>
+
+  <!-- JavaScript 功能區 -->
   <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+      authDomain: "catclassroom-login.firebaseapp.com",
+      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "catclassroom-login",
+      storageBucket: "catclassroom-login.appspot.com",
+      messagingSenderId: "123487233181",
+      appId: "1:123487233181:web:aecc2891dc2d1096962074"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
     const captureBtn = document.getElementById('screenshotBtn');
     const captureArea = document.getElementById('captureArea');
     const previewArea = document.getElementById('previewArea');
@@ -45,8 +66,15 @@
       img.className = "max-w-full border rounded";
       previewArea.appendChild(img);
 
-      // TODO: 將 base64 上傳 Firebase 或廣播
-      console.log('[派題] 擷取完成，準備派送！');
+      // 寫入 Firebase 任務
+      const taskRef = ref(db, "teacher/currentScreenshotAnnotationTask");
+      const taskData = {
+        image: dataUrl,
+        timestamp: new Date().toISOString()
+      };
+
+      await set(taskRef, taskData);
+      alert("✅ 擷取畫面已成功派送給學生！");
     });
   </script>
 </body>
