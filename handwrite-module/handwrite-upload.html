@@ -1,0 +1,81 @@
+<!-- ✅ 全面更新 handwrite-upload.html - 寫入扁平 uploads 資料結構 -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智慧手寫</title>
+  <link rel="stylesheet" href="handwrite-interface.css">
+</head>
+<body>
+  <h1 id="pageTitle">🎨 手寫作答區</h1>
+  <canvas id="handwriteCanvas" width="320" height="320"></canvas>
+
+  <div class="controls">
+    <button onclick="clearCanvas()">✏️ 清除筆跡</button>
+    <button onclick="uploadHandwrite()">📤 上傳作答</button>
+  </div>
+
+  <div id="uploadStatus"></div>
+  <img id="previewImage" alt="上傳預覽圖">
+
+  <script type="module">
+    import { uploadHandwrite } from './handwrite-database.js';
+
+    const canvas = document.getElementById('handwriteCanvas');
+    const ctx = canvas.getContext('2d');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const previewImage = document.getElementById('previewImage');
+
+    let drawing = false;
+    canvas.addEventListener('mousedown', () => { drawing = true; ctx.beginPath(); });
+    canvas.addEventListener('mouseup', () => { drawing = false; });
+    canvas.addEventListener('mouseout', () => { drawing = false; });
+    canvas.addEventListener('mousemove', draw);
+
+    function draw(e) {
+      if (!drawing) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000000';
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+
+    window.clearCanvas = function () {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+
+    window.uploadHandwrite = async function () {
+      const studentId = sessionStorage.getItem('studentId') || 'guest';
+      const studentName = sessionStorage.getItem('studentName') || '匿名學生';
+      const studentClass = sessionStorage.getItem('studentClass') || '未知班級';
+      const questionId = new URLSearchParams(window.location.search).get('questionId') || `自由繪圖_${Date.now()}`;
+      const imageUrl = canvas.toDataURL('image/png');
+
+      uploadStatus.textContent = '📤 上傳中...';
+      try {
+        await uploadHandwrite(studentId, questionId, imageUrl, studentName, studentClass);
+        uploadStatus.textContent = '✅ 上傳成功！';
+        previewImage.src = imageUrl;
+        previewImage.style.display = 'block';
+        alert("作答已成功上傳！視窗將在3秒後關閉。");
+        setTimeout(() => window.close(), 3000);
+      } catch (err) {
+        console.error(err);
+        uploadStatus.textContent = '❌ 上傳失敗，請稍後重試。';
+        alert("上傳失敗，請稍後重試！");
+      }
+    };
+
+    // 初始白色背景
+    clearCanvas();
+  </script>
+</body>
+</html>
