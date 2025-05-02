@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>白貓教師端 v2.0</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>白貓教師端 v3.1</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,9 +30,7 @@
       align-items: center;
       font-size: 0.9em;
     }
-    .student-status-list .student-row:last-child {
-      border-bottom: none;
-    }
+    .student-status-list .student-row:last-child { border-bottom: none; }
     .status-dot {
       display: inline-block;
       width: 10px;
@@ -59,18 +57,13 @@
       line-height: 1.5;
     }
     #teacherChatDisplay p:last-child { border-bottom: none; }
-    #teacherChatDisplay small {
-      color: #6b7280;
-      margin-left: 0.5rem;
-      font-size: 0.8em;
-    }
+    #teacherChatDisplay small { color: #6b7280; margin-left: 0.5rem; font-size: 0.8em; }
   </style>
 </head>
-
 <body class="p-4 md:p-6">
   <header class="bg-gradient-to-r from-blue-200 via-purple-100 to-pink-200 text-gray-800 p-4 text-center rounded-lg mb-6 shadow-md">
     <h1 class="text-2xl md:text-3xl font-bold">白貓教師端 🐾</h1>
-    <p class="text-xs md:text-sm text-gray-600">教室管理與派題系統 v2.0</p>
+    <p class="text-xs md:text-sm text-gray-600">教室管理與派題系統 v3.1</p>
   </header>
 
   <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -78,7 +71,6 @@
     <section class="lg:col-span-1 bg-white p-4 rounded-lg shadow">
       <h2 class="text-xl font-semibold mb-4 border-b pb-2">控制面板</h2>
 
-      <!-- 學生登入連結 -->
       <div class="mb-4">
         <label for="login-link" class="block text-sm font-medium text-gray-700 mb-1">學生登入連結:</label>
         <div class="flex">
@@ -87,17 +79,16 @@
         </div>
       </div>
 
-      <!-- 控制按鈕 -->
       <div class="grid grid-cols-2 gap-2 mb-4">
         <button id="questionPanelButton" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm">出題面板</button>
-        <a href="capture.html" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded text-sm text-center">擷圖</a>
+        <button id="screenshotButton" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded text-sm">擷圖派題</button>
         <button id="classroomMgmtButton" class="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded text-sm">教室管理</button>
         <button id="quizButton" class="bg-cyan-500 hover:bg-cyan-600 text-white px-3 py-2 rounded text-sm">出題小精靈</button>
-        <a href="task-system/task-center.html" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded text-sm col-span-2 text-center">派題中心</a>
+        <a href="https://tangcat1125.github.io/catclassroom/task-system/task-center.html" id="dispatchButton" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded text-sm col-span-2 text-center">派題中心</a>
       </div>
 
       <div class="mt-auto text-center">
-        <button id="backButton" onclick="window.location.href='https://tangcat1125.github.io/catclassroom/'" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm inline-flex items-center">
+        <button id="backButton" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm inline-flex items-center">
           <img src="https://cdn-icons-png.flaticon.com/128/109/109618.png" alt="返回" width="16" class="mr-2"> 返回
         </button>
       </div>
@@ -106,12 +97,14 @@
     <!-- 學生狀態與回應 -->
     <section class="lg:col-span-1 bg-white p-4 rounded-lg shadow">
       <h2 class="text-xl font-semibold mb-4 border-b pb-2">學生狀態與回應</h2>
+
       <div class="mb-4">
         <h3 class="text-lg font-medium text-gray-700 mb-2">在線學生列表:</h3>
         <div id="studentStatusList" class="student-status-list scrollable-area">
           <p class="text-gray-400 text-sm italic">（等待學生登入...）</p>
         </div>
       </div>
+
       <div>
         <h3 class="text-lg font-medium text-gray-700 mb-2">即時回應:</h3>
         <div id="responseBoard" class="response-board scrollable-area">
@@ -129,6 +122,7 @@
     </section>
   </main>
 
-  <script src="main.js" type="module"></script>
+  <!-- JS 入口 -->
+  <script type="module" src="main.js"></script>
 </body>
 </html>
