@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>白貓擷圖派題系統</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body class="bg-blue-50 p-6 font-sans text-gray-800">
+  <header class="text-center mb-6">
+    <h1 class="text-3xl font-bold">📸 白貓擷圖派題工具</h1>
+    <p class="text-sm text-gray-500">擷取畫面並派送給學生標註或回應</p>
+  </header>
+
+  <section class="bg-white p-4 rounded shadow mb-6">
+    <h2 class="text-lg font-semibold mb-2">擷取區塊</h2>
+    <div id="captureArea" class="bg-gray-100 p-4 rounded">
+      <p class="text-sm">這是要擷取的區域內容。</p>
+      <p class="text-sm text-blue-600">可以放圖表、段落、圖片、題目說明等等。</p>
+    </div>
+    <button id="screenshotBtn" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">擷取並派題</button>
+  </section>
+
+  <section class="bg-white p-4 rounded shadow">
+    <h2 class="text-lg font-semibold mb-2">擷取預覽</h2>
+    <div id="previewArea" class="border border-gray-300 p-2 rounded bg-white">
+      <p class="text-sm text-gray-400 italic">尚未擷取畫面...</p>
+    </div>
+  </section>
+
+  <script type="module">
+    const captureBtn = document.getElementById('screenshotBtn');
+    const captureArea = document.getElementById('captureArea');
+    const previewArea = document.getElementById('previewArea');
+
+    captureBtn.addEventListener('click', async () => {
+      const canvas = await html2canvas(captureArea);
+      const dataUrl = canvas.toDataURL();
+
+      // 顯示預覽
+      previewArea.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.className = "max-w-full border rounded";
+      previewArea.appendChild(img);
+
+      // TODO: 將 base64 上傳 Firebase 或廣播
+      console.log('[派題] 擷取完成，準備派送！');
+    });
+  </script>
+</body>
+</html>
