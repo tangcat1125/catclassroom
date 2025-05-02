@@ -32,15 +32,15 @@ if (copyLinkBtn) {
   console.warn("[DOM] 找不到 copyLinkButton");
 }
 
-// 2. 出題面板（目前尚未實作）
+// 2. 出題面板 ✅ 更新為正確連結
 const questionPanelBtn = document.getElementById('questionPanelButton');
 if (questionPanelBtn) {
   questionPanelBtn.addEventListener('click', () => {
-    alert("👉 出題面板功能尚未實作，可用於單題設計。");
+    window.location.href = 'https://tangcat1125.github.io/catclassroom/task-system/task-center.html';
   });
 }
 
-// 3. 擷圖派題（✅ 正確連結 capture.html）
+// 3. 擷圖派題 ✅ 已正確
 const screenshotBtn = document.getElementById('screenshotButton');
 if (screenshotBtn) {
   screenshotBtn.addEventListener('click', () => {
@@ -64,7 +64,7 @@ if (quizBtn) {
   });
 }
 
-// 6. 派題中心（✅ 正確連結 task-center.html）
+// 6. 派題中心（✅ 仍保留，若需保留可按需要使用）
 const dispatchBtn = document.getElementById('dispatchButton');
 if (dispatchBtn) {
   dispatchBtn.addEventListener('click', () => {
