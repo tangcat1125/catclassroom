@@ -4,32 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>學生登入</title>
-    <!-- 連結 CSS 文件 (可選) -->
-    <!-- <link rel="stylesheet" href="style.css"> -->
+    <!-- CSS 樣式直接寫在這裡 -->
     <style>
-        /* 快速加入一些基本間距和樣式 */
+        /* 基本樣式 */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* 使用系統預設字體 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f0f2f5; /* 稍微調整背景色 */
+            background-color: #f0f2f5;
+            margin: 0;
         }
         .login-container {
             background-color: white;
-            padding: 30px 40px; /* 增加左右 padding */
+            padding: 30px 40px;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* 稍微加深陰影 */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 400px; /* 限制最大寬度 */
+            max-width: 400px;
             box-sizing: border-box;
         }
         h1 {
             text-align: center;
-            color: #1c1e21; /* 臉書風格深色 */
+            color: #1c1e21;
+            margin-top: 0;
             margin-bottom: 25px;
-            font-size: 1.8em; /* 稍微加大標題 */
+            font-size: 1.8em;
         }
         .form-group {
             margin-bottom: 20px;
@@ -37,61 +38,52 @@
         label {
             display: block;
             margin-bottom: 8px;
-            color: #606770; /* 臉書風格標籤灰 */
+            color: #606770;
             font-weight: bold;
             font-size: 0.95em;
         }
         input[type="text"],
-        input[type="number"], /* 確保 number input 也有樣式 */
+        input[type="number"],
         select {
             width: 100%;
-            padding: 12px 15px; /* 增加 padding */
-            border: 1px solid #ccd0d5; /* 臉書風格邊框灰 */
-            border-radius: 6px; /* 圓角調整 */
+            padding: 12px 15px;
+            border: 1px solid #ccd0d5;
+            border-radius: 6px;
             box-sizing: border-box;
-            font-size: 1em; /* 輸入框字體大小 */
+            font-size: 1em;
         }
-        input::placeholder { /* Placeholder 樣式 */
-            color: #8a8d91;
-        }
+        input::placeholder { color: #8a8d91; }
         button {
             width: 100%;
             padding: 12px;
-            background-color: #1877f2; /* 臉書藍 */
+            background-color: #1877f2;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 1.1em; /* 按鈕字體大小 */
+            font-size: 1.1em;
             font-weight: bold;
             transition: background-color 0.2s ease;
         }
-        button:hover {
-            background-color: #166fe5; /* 滑過時深一點的藍 */
-        }
-        button:disabled { /* 禁用按鈕的樣式 */
-            background-color: #a0c3f1; /* 淺藍色 */
-            cursor: not-allowed;
-        }
-         /* 座號區域的容器樣式 */
-        #seatArea {
-            min-height: 48px; /* 保持與輸入框/下拉選單相同的高度感 (padding 變大了) */
-            display: flex; /* 讓裡面的元素可以很好地填滿 */
-        }
-        /* 確保動態添加的 input/select 也是 100% 寬 */
-        #seatArea > input,
-        #seatArea > select {
-            width: 100%;
+        button:hover { background-color: #166fe5; }
+        button:disabled { background-color: #a0c3f1; cursor: not-allowed; }
+        #seatArea { min-height: 48px; display: flex; }
+        #seatArea > input, #seatArea > select { width: 100%; }
+        .error-message {
+             color: red;
+             padding: 20px;
+             text-align: center;
+             font-weight: bold;
+             border: 1px dashed red;
+             background-color: #ffebeb;
         }
     </style>
 </head>
 <body>
 
-    <div class="login-container">
+    <div class="login-container" id="loginContainer">
         <h1>學生登入</h1>
-
-        <form id="loginForm" onsubmit="return false;"> <!-- 添加 onsubmit="return false;" 阻止預設提交 -->
-
+        <form id="loginForm" onsubmit="return false;">
             <div class="form-group">
                 <label for="identitySelect">我是...</label>
                 <select id="identitySelect" name="identity">
@@ -99,34 +91,21 @@
                     <option value="他班">他班學生</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label for="nameInput">請輸入您的暱稱或本名：</label>
                 <input type="text" id="nameInput" name="name" placeholder="如：小熊 / Lily / Quentin">
             </div>
-
             <div class="form-group">
-                <!-- Label for 屬性會由 JS 動態修改 -->
-                <label for="seatInput">請輸入您的座號 (數字)：</label>
-                 <!-- 座號區域，JS 會動態修改這裡的內容 -->
+                <label for="seatInput" id="seatLabel">請輸入您的座號 (數字)：</label>
                 <div id="seatArea">
-                     <!-- 初始佔位，JS 會立即替換 -->
                      <span style="color: #ccc;">座號載入中...</span>
                 </div>
             </div>
-
-            <!-- 將 type 改為 button 或 在 form 添加 onsubmit="return false;" -->
             <button type="button" id="loginButton">登入教室</button>
-
         </form>
     </div>
 
-    <!--
-        *****************************************
-        ** ↓↓↓ 重要的修改在這裡 ↓↓↓ **
-        *****************************************
-        確保這個 script 標籤有 type="module"
-    -->
+    <!-- 確認這裡引入 login.js 並包含 type="module" -->
     <script src="login.js" type="module"></script>
 
 </body>
