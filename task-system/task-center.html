@@ -44,6 +44,12 @@
 
       <button id="filterBtn">🔎 篩選題目</button>
     </div>
+
+    <div style="margin-top: 1rem;">
+      <button onclick="window.location.href='https://tangcat1125.github.io/catclassroom/teacher-ui/index.html'" style="padding: 0.5rem 1rem; background-color: #444; color: white; border: none; border-radius: 6px; cursor: pointer;">
+        ⬅️ 返回教師端主頁
+      </button>
+    </div>
   </header>
 
   <main>
@@ -107,7 +113,6 @@
       });
     }
 
-    // 派送到 /currentQuestion（一般出題）
     window.assignQuestion = function(index) {
       const question = filteredQuestions[index];
       if (!question) {
@@ -118,7 +123,6 @@
       alert(`✅ 已將題${index + 1}派送給班級！`);
     }
 
-    // 派送到 /teacher/question（手寫作答）
     window.assignHandwriteQuestion = function(index) {
       const question = filteredQuestions[index];
       if (!question) {
@@ -144,7 +148,6 @@
         });
     }
 
-    // 載入題目資料
     function loadQuestions() {
       const questionsRef = ref(taskDatabase, '/questions');
       onValue(questionsRef, (snapshot) => {
