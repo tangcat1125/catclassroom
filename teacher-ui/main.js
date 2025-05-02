@@ -17,7 +17,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// --- 複製登入連結按鈕 ---
+// --- 白貓教師端 main.js：正確設定所有按鈕功能與連結 ---
+
+// 1. 複製學生登入連結
 const copyLinkBtn = document.getElementById('copyLinkButton');
 if (copyLinkBtn) {
   copyLinkBtn.addEventListener('click', () => {
@@ -26,9 +28,11 @@ if (copyLinkBtn) {
     document.execCommand('copy');
     alert("已複製學生登入連結！");
   });
+} else {
+  console.warn("[DOM] 找不到 copyLinkButton");
 }
 
-// --- 出題面板按鈕（目前尚未實作） ---
+// 2. 出題面板（目前尚未實作）
 const questionPanelBtn = document.getElementById('questionPanelButton');
 if (questionPanelBtn) {
   questionPanelBtn.addEventListener('click', () => {
@@ -36,15 +40,15 @@ if (questionPanelBtn) {
   });
 }
 
-// --- 擷圖派題按鈕（✅ 跳轉至擷圖派題頁面） ---
+// 3. 擷圖派題（✅ 正確連結 capture.html）
 const screenshotBtn = document.getElementById('screenshotButton');
 if (screenshotBtn) {
   screenshotBtn.addEventListener('click', () => {
-    window.location.href = "https://tangcat1125.github.io/catclassroom/teacher-ui/task-capture/capture.html";
+    window.location.href = 'https://tangcat1125.github.io/catclassroom/teacher-ui/task-capture/capture.html';
   });
 }
 
-// --- 教室管理按鈕 ---
+// 4. 教室管理（尚未實作）
 const classroomMgmtBtn = document.getElementById('classroomMgmtButton');
 if (classroomMgmtBtn) {
   classroomMgmtBtn.addEventListener('click', () => {
@@ -52,7 +56,7 @@ if (classroomMgmtBtn) {
   });
 }
 
-// --- 出題小精靈按鈕 ---
+// 5. 出題小精靈（尚未實作）
 const quizBtn = document.getElementById('quizButton');
 if (quizBtn) {
   quizBtn.addEventListener('click', () => {
@@ -60,18 +64,18 @@ if (quizBtn) {
   });
 }
 
-// --- 派題中心按鈕（✅ 跳轉） ---
+// 6. 派題中心（✅ 正確連結 task-center.html）
 const dispatchBtn = document.getElementById('dispatchButton');
 if (dispatchBtn) {
   dispatchBtn.addEventListener('click', () => {
-    window.location.href = "https://tangcat1125.github.io/catclassroom/task-system/task-center.html";
+    window.location.href = 'https://tangcat1125.github.io/catclassroom/task-system/task-center.html';
   });
 }
 
-// --- 返回首頁按鈕 ---
+// 7. 返回首頁
 const backBtn = document.getElementById('backButton');
 if (backBtn) {
   backBtn.addEventListener('click', () => {
-    window.location.href = "https://tangcat1125.github.io/catclassroom/";
+    window.location.href = 'https://tangcat1125.github.io/catclassroom/';
   });
 }
