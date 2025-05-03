@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>學生登入</title>
+<!-- CSS 樣式直接寫在這裡 -->
+<style>
+        /* 基本樣式 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+        }
+        .login-container {
+            background-color: white;
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+            color: #1c1e21;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #606770;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccd0d5;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        input::placeholder { color: #8a8d91; }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
+        }
+        button:hover { background-color: #166fe5; }
+        button:disabled { background-color: #a0c3f1; cursor: not-allowed; }
+        #seatArea { min-height: 48px; display: flex; }
+        #seatArea > input, #seatArea > select { width: 100%; }
+        .error-message {
+             color: red;
+             padding: 20px;
+             text-align: center;
+             font-weight: bold;
+             border: 1px dashed red;
+             background-color: #ffebeb;
+        }
+    
+
+.qr-block {
+  margin-top: 15px;
+  text-align: center;
+}
+.qr-inline {
+  width: 120px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+.qr-caption {
+  margin-top: 6px;
+  font-size: 0.85em;
+  color: #555;
+}
+</style>
+</head>
+<body>
+<div class="login-container" id="loginContainer">
+<h1>學生登入</h1>
+<form id="loginForm" onsubmit="return false;">
+<div class="form-group">
+<label for="identitySelect">我是...</label>
+<select id="identitySelect" name="identity">
+<option selected="" value="本班">本班學生</option>
+<option value="他班">他班學生</option>
+</select>
+</div>
+<div class="form-group">
+<label for="nameInput">請輸入您的暱稱或本名：</label>
+<input id="nameInput" name="name" placeholder="如：小熊 / Lily / Quentin" type="text"/>
+</div>
+<div class="form-group">
+<label for="seatInput" id="seatLabel">請輸入您的座號 (數字)：</label>
+<div id="seatArea">
+<span style="color: #ccc;">座號載入中...</span>
+</div>
+</div><div class="qr-block"><img alt="Student share QR" class="qr-inline" src="qrcode_rollcall.png"/><div class="qr-caption">📡 老師沒反應？請同學幫忙掃這個！</div></div>
+<button id="loginButton" type="button">登入教室</button>
+</form>
+</div>
+<!-- 確認這裡引入 login.js 並包含 type="module" -->
+<script src="login.js" type="module"></script>
+</body>
+</html>
