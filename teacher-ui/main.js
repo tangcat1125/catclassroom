@@ -1,0 +1,143 @@
+// ✅ main.js - 教師端邏輯整合包
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+  authDomain: "catclassroom-login.firebaseapp.com",
+  databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "catclassroom-login",
+  storageBucket: "catclassroom-login.firebasestorage.app",
+  messagingSenderId: "123487233181",
+  appId: "1:123487233181:web:aecc2891dc2d1096962074",
+  measurementId: "G-6C92GYSX3F"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 🟢 教師端：今日出席學生清單
+const loginRef = ref(db, 'login');
+const studentStatusList = document.getElementById('studentStatusList');
+
+onValue(loginRef, (snapshot) => {
+  if (!studentStatusList) return;
+  const data = snapshot.val();
+  studentStatusList.innerHTML = '';
+  const allStudents = [];
+
+  Object.entries(data || {}).forEach(([classType, students]) => {
+    Object.entries(students).forEach(([seat, info]) => {
+      if (!info.loginTime || !isToday(info.loginTime)) return;
+      allStudents.push({ classType, seat, name: info.name });
+    });
+  });
+
+  allStudents.sort((a, b) => {
+    if (a.classType === '本班' && b.classType !== '本班') return -1;
+    if (a.classType !== '本班' && b.classType === '本班') return 1;
+    return parseInt(a.seat.replace(/^G/i, '99')) - parseInt(b.seat.replace(/^G/i, '99'));
+  });
+
+  const title = document.createElement('div');
+  title.innerHTML = `<strong class="block text-green-600 mb-2">🟢 今日出席人數：${allStudents.length} 人</strong>`;
+  studentStatusList.appendChild(title);
+
+  allStudents.forEach(({ classType, seat, name }) => {
+    const row = document.createElement('div');
+    row.className = 'student-row';
+    row.innerHTML = `<span class="status-dot"></span> ${name}（${classType} ${seat}）`;
+    studentStatusList.appendChild(row);
+  });
+});
+
+// 🆘 求救訊號監聽區塊
+const sosRef = ref(db, 'help');
+const responseBoard = document.getElementById('responseBoard');
+
+onValue(sosRef, (snapshot) => {
+  if (!responseBoard) return;
+  const data = snapshot.val();
+  responseBoard.innerHTML = '';
+  const now = Date.now();
+  const MAX_AGE = 60 * 1000;
+  let count = 0;
+
+  Object.entries(data || {}).forEach(([seat, info]) => {
+    if (!info.name || !info.seat || !info.timestamp) return;
+    if (now - info.timestamp > MAX_AGE) return;
+
+    const box = document.createElement('div');
+    box.className = 'response-box red';
+    const time = new Date(info.timestamp).toLocaleTimeString();
+    box.innerHTML = `🆘 ${info.name}（座號 ${info.seat}）發出求救訊號！⏰ ${time} <button class="ml-4 text-sm text-blue-600 underline" data-seat="${seat}">清除</button>`;
+    responseBoard.appendChild(box);
+    count++;
+  });
+
+  if (count === 0) {
+    responseBoard.innerHTML = '<p class="text-gray-400 text-sm italic">（目前尚無學生求救訊號）</p>';
+  }
+
+  document.querySelectorAll('[data-seat]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const seat = e.target.getAttribute('data-seat');
+      const seatRef = ref(db, `help/${seat}`);
+      remove(seatRef);
+    });
+  });
+});
+
+// 🔗 超連結派送功能
+const announcementBtn = document.getElementById("sendAnnouncementButton");
+if (announcementBtn) {
+  announcementBtn.addEventListener("click", () => {
+    const title = document.getElementById("linkTitle").value.trim();
+    const content = document.getElementById("linkContent").value.trim();
+    const url = document.getElementById("linkURL").value.trim();
+
+    if (!title || !url) {
+      alert("❗請輸入標題與網址");
+      return;
+    }
+
+    const announcementRef = ref(db, 'messages/announcement');
+    set(announcementRef, {
+      title,
+      content,
+      url,
+      timestamp: Date.now()
+    }).then(() => {
+      alert("✅ 已派送給學生！");
+    }).catch((error) => {
+      console.error("❌ 發送失敗：", error);
+      alert("發送失敗，請稍後重試");
+    });
+  });
+}
+
+function isToday(ts) {
+  const today = new Date();
+  const target = new Date(ts);
+  return today.toDateString() === target.toDateString();
+} 
+
+
+// ✅ student.js 需搭配這段：顯示新訊息動畫
+const announcementRef = ref(db, 'messages/announcement');
+const systemMessageBox = document.getElementById('systemMessageContent');
+
+onValue(announcementRef, (snapshot) => {
+  const data = snapshot.val();
+  if (data && data.title && data.url) {
+    systemMessageBox.innerHTML = `
+      <strong class="animate-pulse text-red-600">📣 ${data.title}</strong><br/>
+      ${data.content ? data.content + '<br/>' : ''}
+      👉 <a href="${data.url}" target="_blank">點我前往查看</a>
+    `;
+
+    const audio = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-alert-bells-echo-765.mp3");
+    audio.play();
+  }
+});
