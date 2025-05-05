@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📤 手寫題目派送器</title>
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+      text-align: center;
+    }
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: inline-block;
+      max-width: 500px;
+      width: 90%;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1em;
+    }
+    button {
+      padding: 12px 20px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #388e3c;
+    }
+    #resultLink {
+      margin-top: 15px;
+      word-break: break-all;
+      color: #333;
+    }
+    .timestamp-note {
+      font-size: 0.9em;
+      color: #555;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📤 手寫題目派送器</h1>
+    <input id="questionId" placeholder="請輸入題目代號（ex: 20240505-01）" />
+    <input id="backgroundUrl" placeholder="（可選）題目圖片網址 (image url)" />
+    <input id="assignedClass" placeholder="請輸入班級代號（ex: 603）" />
+    <button onclick="dispatchTask()">派發題目</button>
+    <div id="resultLink"></div>
+    <div class="timestamp-note" id="timestampInfo"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+      authDomain: "catclassroom-login.firebaseapp.com",
+      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "catclassroom-login",
+      storageBucket: "catclassroom-login.appspot.com",
+      messagingSenderId: "123487233181",
+      appId: "1:123487233181:web:aecc2891dc2d1096962074"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.dispatchTask = async function () {
+      const questionId = document.getElementById('questionId').value.trim();
+      const backgroundUrl = document.getElementById('backgroundUrl').value.trim();
+      const assignedClass = document.getElementById('assignedClass').value.trim();
+      const resultLink = document.getElementById('resultLink');
+      const timestampInfo = document.getElementById('timestampInfo');
+
+      if (!questionId || !assignedClass) {
+        alert("請填寫題目代號與班級代號！");
+        return;
+      }
+
+      const now = Date.now();
+      const taskData = {
+        backgroundUrl: backgroundUrl || "",
+        assignedClass,
+        releaseTimestamp: now
+      };
+
+      const taskRef = ref(db, `/handwritingTasks/${questionId}`);
+      await set(taskRef, taskData);
+
+      const encoded = encodeURIComponent(backgroundUrl || "");
+      const link = `https://tangcat1125.github.io/catclassroom/handwrite-module/handwrite-upload.html?questionId=${questionId}${encoded ? `&backgroundUrl=${encoded}` : ''}`;
+      resultLink.innerHTML = `✅ 已派發！請將此連結發給學生：<br><a href="${link}" target="_blank">${link}</a>`;
+      timestampInfo.innerText = `派發時間：${new Date(now).toLocaleString()}（timestamp: ${now}）`;
+    }
+  </script>
+</body>
+</html>
