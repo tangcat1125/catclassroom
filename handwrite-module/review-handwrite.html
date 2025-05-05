@@ -1,119 +1,56 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>手寫批閱中心</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📋 題目手寫作答總覽</title>
+  <script type="module" src="review-loader.js"></script>
   <style>
-    body { font-family: 'Microsoft JhengHei', sans-serif; background: #f0f4f8; padding: 20px; }
-    h1 { text-align: center; color: #1a237e; }
-    .review-container { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
-    .card { background: white; border-radius: 8px; padding: 10px; width: 280px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center; }
-    img.preview { width: 100%; border: 1px solid #ccc; margin-bottom: 8px; border-radius: 4px; }
-    .student-info { margin: 4px 0; font-size: 0.95em; }
-    .actions button { margin: 4px; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; }
-    .ok { background-color: #4caf50; color: white; }
-    .wrong { background-color: #f44336; color: white; }
-    .status { font-size: 0.85em; color: gray; margin-top: 6px; }
-    .progress-bar { width: 80%; margin: 10px auto; background: #ddd; border-radius: 8px; overflow: hidden; height: 20px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
-    .progress-fill { height: 100%; background: linear-gradient(to right, #4caf50, #81c784); color: white; text-align: center; line-height: 20px; font-size: 12px; white-space: nowrap; transition: width 0.3s ease-in-out; }
+    body { font-family: sans-serif; padding: 1rem; background-color: #f9f9f9; }
+    h1 { text-align: center; color: #333; }
+    .student-entry {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.05);
+    }
+    .thumbnail {
+      width: 100px;
+      height: auto;
+      cursor: pointer;
+      border: 1px solid #888;
+      border-radius: 4px;
+    }
+    button {
+      margin: 1rem auto;
+      display: block;
+      padding: 8px 16px;
+      background-color: #555;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    #previewImage {
+      max-width: 80%;
+      display: block;
+      margin: 1rem auto;
+      border: 2px solid #444;
+    }
   </style>
 </head>
 <body>
-  <h1>📝 手寫批閱中心</h1>
-  <div class="progress-bar">
-    <div id="progressFill" class="progress-fill" style="width: 0%">尚無作答</div>
-  </div>
-  <div id="reviewBoard" class="review-container">載入中...</div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
-      authDomain: "catclassroom-login.firebaseapp.com",
-      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "catclassroom-login",
-      storageBucket: "catclassroom-login.appspot.com",
-      messagingSenderId: "123487233181",
-      appId: "1:123487233181:web:aecc2891dc2d1096962074"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const reviewBoard = document.getElementById("reviewBoard");
-    const progressFill = document.getElementById("progressFill");
-
-    const questionId = new URLSearchParams(location.search).get("questionId") || "預設題目";
-    const uploadRef = ref(db, `handwriting/uploads/${questionId}`);
-    const reviewRef = ref(db, `handwriting/reviews/${questionId}`);
-
-    let reviewedStatus = {};
-
-    onValue(reviewRef, (snapshot) => {
-      reviewedStatus = snapshot.val() || {};
-      renderProgressBar();
-    });
-
-    onValue(uploadRef, (snapshot) => {
-      const data = snapshot.val();
-      reviewBoard.innerHTML = '';
-      renderProgressBar(Object.keys(data || {}).length);
-
-      if (!data) {
-        reviewBoard.innerHTML = '<p>尚無學生作答。</p>';
-        return;
-      }
-
-      Object.entries(data).forEach(([studentId, info]) => {
-        const card = document.createElement('div');
-        card.className = 'card';
-
-        card.innerHTML = `
-          <img src="${info.imageUrl}" alt="preview" class="preview" />
-          <div class="student-info">👤 ${info.studentName || studentId}（${info.studentClass || '未填班級'}）</div>
-          <div class="actions">
-            <button class="ok">○</button>
-            <button class="wrong">×</button>
-          </div>
-          <div class="status" id="status-${studentId}">
-            ${reviewedStatus[studentId] ? `✅ 已批閱：${reviewedStatus[studentId].isCorrect ? '○' : '×'}` : '尚未批閱'}
-          </div>
-        `;
-
-        card.querySelector('.ok').onclick = () => submitReview(studentId, true);
-        card.querySelector('.wrong').onclick = () => submitReview(studentId, false);
-
-        reviewBoard.appendChild(card);
-      });
-    });
-
-    function submitReview(studentId, isCorrect) {
-      const result = {
-        isCorrect,
-        checkedAt: Date.now(),
-        checkedBy: "貓老師"
-      };
-      set(ref(db, `handwriting/reviews/${questionId}/${studentId}`), result).then(() => {
-        const statusEl = document.getElementById(`status-${studentId}`);
-        if (statusEl) statusEl.textContent = `✅ 已批閱：${isCorrect ? '○' : '×'}`;
-        reviewedStatus[studentId] = result;
-        renderProgressBar();
-      });
-    }
-
-    function renderProgressBar(total = 0) {
-      const reviewedCount = Object.keys(reviewedStatus).length;
-      if (total === 0) {
-        progressFill.style.width = '0%';
-        progressFill.textContent = '尚無作答';
-        return;
-      }
-      const percent = Math.round((reviewedCount / total) * 100);
-      progressFill.style.width = `${percent}%`;
-      progressFill.textContent = `已批閱 ${reviewedCount} / ${total}`;
-    }
-  </script>
+  <h1>📋 批閱題目：<span id="questionTitle">智慧手寫作答</span></h1>
+  <div id="progressInfo">載入中...</div>
+  <hr>
+  <img id="previewImage" src="" alt="預覽圖" style="display: none;">
+  <div id="answersContainer"></div>
+  <button onclick="location.href='index.html'">⬅️ 返回任務中心</button>
 </body>
 </html>
