@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智慧手寫</title>
+  <link rel="stylesheet" href="handwrite-interface.css">
+  <style>
+    canvas {
+      border: 2px solid #888;
+      border-radius: 6px;
+      background-color: white;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      display: block;
+      margin: 0 auto 10px;
+    }
+    .controls, .tools {
+      text-align: center;
+      margin: 10px 0;
+    }
+    .tools input {
+      margin: 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="pageTitle">🎨 手寫作答區</h1>
+
+  <canvas id="handwriteCanvas" width="320" height="320"></canvas>
+
+  <div class="tools">
+    筆粗：<input type="range" id="penSize" min="1" max="10" value="3">
+    顏色：<input type="color" id="penColor" value="#000000">
+  </div>
+
+  <div class="controls">
+    <button onclick="clearCanvas()">✏️ 清除筆跡</button>
+    <button onclick="uploadHandwrite()">📤 上傳作答</button>
+  </div>
+
+  <div id="uploadStatus"></div>
+  <img id="previewImage" alt="上傳預覽圖" style="display: none; max-width: 90%; margin: 1rem auto;">
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+      authDomain: "catclassroom-login.firebaseapp.com",
+      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "catclassroom-login",
+      storageBucket: "catclassroom-login.appspot.com",
+      messagingSenderId: "123487233181",
+      appId: "1:123487233181:web:aecc2891dc2d1096962074"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const canvas = document.getElementById('handwriteCanvas');
+    const ctx = canvas.getContext('2d');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const previewImage = document.getElementById('previewImage');
+    const penSizeInput = document.getElementById('penSize');
+    const penColorInput = document.getElementById('penColor');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const questionId = urlParams.get('questionId') || `自由繪圖_${Date.now()}`;
+    const backgroundUrl = urlParams.get('backgroundUrl');
+
+    // ✅ 優先從網址參數抓 studentId 資訊（無則用 sessionStorage，再無則 fallback）
+    ['studentId', 'studentName', 'studentClass'].forEach(key => {
+      const value = urlParams.get(key);
+      if (value) sessionStorage.setItem(key, value);
+    });
+
+    const studentId = sessionStorage.getItem('studentId') || 'guest';
+    const studentName = sessionStorage.getItem('studentName') || '匿名學生';
+    const studentClass = sessionStorage.getItem('studentClass') || '未知班級';
+
+    let drawing = false;
+
+    function getPenConfig() {
+      return {
+        size: parseInt(penSizeInput.value),
+        color: penColorInput.value
+      };
+    }
+
+    function startDrawing(x, y) {
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+
+    function stopDrawing() {
+      drawing = false;
+      ctx.beginPath();
+    }
+
+    function continueDrawing(x, y) {
+      if (!drawing) return;
+      const pen = getPenConfig();
+      ctx.lineWidth = pen.size;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = pen.color;
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      if (e.touches) {
+        return {
+          x: e.touches[0].clientX - rect.left,
+          y: e.touches[0].clientY - rect.top
+        };
+      } else {
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      }
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      const pos = getPos(e);
+      startDrawing(pos.x, pos.y);
+    });
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('mousemove', (e) => {
+      const pos = getPos(e);
+      continueDrawing(pos.x, pos.y);
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const pos = getPos(e);
+      startDrawing(pos.x, pos.y);
+    });
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const pos = getPos(e);
+      continueDrawing(pos.x, pos.y);
+    });
+    canvas.addEventListener('touchend', stopDrawing);
+
+    window.clearCanvas = function () {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+    };
+
+    window.uploadHandwrite = async function () {
+      const imageUrl = canvas.toDataURL('image/png');
+      uploadStatus.textContent = '📤 上傳中...';
+      try {
+        const releaseTime = await getQuestionTimestamp(questionId);
+        const now = Date.now();
+        const timeLimit = 10 * 60 * 1000;
+        if (releaseTime && now - releaseTime > timeLimit) {
+          alert("⏰ 作答時間已過，無法上傳！");
+          uploadStatus.textContent = '❌ 超時，無法上傳。';
+          return;
+        }
+        const data = {
+          imageUrl,
+          timestamp: now,
+          studentName,
+          studentClass
+        };
+        const answerRef = ref(db, `/handwriting/${studentId}/${questionId}`);
+        await set(answerRef, data);
+        uploadStatus.textContent = '✅ 上傳成功！';
+        previewImage.src = imageUrl;
+        previewImage.style.display = 'block';
+        alert("作答已成功上傳！視窗將在3秒後關閉。");
+        setTimeout(() => window.close(), 3000);
+      } catch (err) {
+        console.error(err);
+        uploadStatus.textContent = '❌ 上傳失敗，請稍後重試。';
+        alert("上傳失敗，請稍後重試！");
+      }
+    };
+
+    async function getQuestionTimestamp(questionId) {
+      try {
+        const res = await fetch(`https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app/handwritingTasks/${questionId}/releaseTimestamp.json`);
+        const ts = await res.json();
+        return ts || null;
+      } catch (e) {
+        console.warn("無法取得 releaseTimestamp：", e);
+        return null;
+      }
+    }
+
+    function loadBackgroundImage(url) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+      img.onerror = () => {
+        console.warn("背景圖載入失敗，使用空白畫布");
+        clearCanvas();
+      }
+      img.src = url;
+    }
+
+    if (backgroundUrl) {
+      loadBackgroundImage(decodeURIComponent(backgroundUrl));
+    } else {
+      clearCanvas();
+    }
+  </script>
+</body>
+</html>
