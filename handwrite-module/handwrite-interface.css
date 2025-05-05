@@ -1,0 +1,77 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9fafb;
+  margin: 0;
+  padding: 1rem;
+  color: #333;
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.5rem;
+  color: #222;
+  margin-bottom: 1rem;
+}
+
+canvas {
+  border: 3px solid #ccc;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  display: block;
+  margin: 1rem auto;
+  max-width: 90%;
+  height: auto;
+}
+
+.tools {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.tools label {
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+input[type="range"], input[type="color"] {
+  vertical-align: middle;
+}
+
+.controls {
+  margin: 1rem 0;
+}
+
+.controls button {
+  padding: 0.6rem 1.2rem;
+  margin: 0.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.controls button:hover {
+  background-color: #45a049;
+}
+
+#uploadStatus {
+  font-weight: bold;
+  color: #555;
+  margin-top: 1rem;
+}
+
+#previewImage {
+  max-width: 90%;
+  margin-top: 1rem;
+  border: 2px dashed #aaa;
+  border-radius: 8px;
+  display: block;
+}
