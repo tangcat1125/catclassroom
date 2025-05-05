@@ -1,12 +1,13 @@
 // firebase-config.js
 const firebaseConfig = {
-  apiKey: "你的_API_KEY",
-  authDomain: "你的_project.firebaseapp.com",
-  databaseURL: "https://你的_project.firebaseio.com",
-  projectId: "你的_projectId",
-  storageBucket: "你的_project.appspot.com",
-  messagingSenderId: "xxxxxxxxxx",
-  appId: "1:xxxxxxxxxx:web:xxxxxxxxxx"
-};
+  apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+  authDomain: "catclassroom-login.firebaseapp.com",
+  databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "catclassroom-login",
+  storageBucket: "catclassroom-login.firebasestorage.app",
+  messagingSenderId: "123487233181",
+  appId: "1:123487233181:web:aecc2891dc2d1096962074",
+  measurementId: "G-6C92GYSX3F"
+    };
 
 firebase.initializeApp(firebaseConfig);
