@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📋 題目手寫作答總覽</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+      authDomain: "catclassroom-login.firebaseapp.com",
+      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "catclassroom-login",
+      storageBucket: "catclassroom-login.appspot.com",
+      messagingSenderId: "123487233181",
+      appId: "1:123487233181:web:aecc2891dc2d1096962074"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const questionId = new URLSearchParams(window.location.search).get("questionId") || "";
+    const container = document.getElementById("answersContainer");
+    const progress = document.getElementById("progressInfo");
+    const preview = document.getElementById("previewImage");
+
+    const dataRef = ref(db, `handwritingByQuestion/${questionId}`);
+
+    onValue(dataRef, (snapshot) => {
+      const data = snapshot.val();
+      container.innerHTML = "";
+      if (!data) {
+        container.innerHTML = "<p>尚無學生提交作答。</p>";
+        return;
+      }
+      let reviewedCount = 0;
+      let total = Object.keys(data).length;
+
+      Object.entries(data).forEach(([studentId, info]) => {
+        const div = document.createElement("div");
+        div.className = "student-entry";
+
+        const img = document.createElement("img");
+        img.src = info.imageUrl;
+        img.alt = `${info.studentName}`;
+        img.className = "thumbnail";
+        img.onclick = () => {
+          preview.src = info.imageUrl;
+        };
+
+        const infoBox = document.createElement("div");
+        infoBox.innerHTML = `
+          <strong>${info.studentName || studentId}</strong><br>
+          ${new Date(info.timestamp).toLocaleString()}<br>
+        `;
+
+        const btnO = document.createElement("button");
+        btnO.textContent = "✔ 正確";
+        btnO.onclick = async () => {
+          await set(ref(db, `handwritingByQuestion/${questionId}/${studentId}/review`), {
+            result: "correct",
+            reviewedAt: Date.now()
+          });
+        };
+
+        const btnX = document.createElement("button");
+        btnX.textContent = "✘ 錯誤";
+        btnX.onclick = async () => {
+          await set(ref(db, `handwritingByQuestion/${questionId}/${studentId}/review`), {
+            result: "wrong",
+            reviewedAt: Date.now()
+          });
+        };
+
+        if (info.review?.result) reviewedCount++;
+
+        div.appendChild(img);
+        div.appendChild(infoBox);
+        div.appendChild(btnO);
+        div.appendChild(btnX);
+        container.appendChild(div);
+      });
+
+      progress.textContent = `✅ 已批閱 ${reviewedCount} / ${total}`;
+    });
+  </script>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    .student-entry {
+      border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .thumbnail {
+      width: 100px; height: auto; cursor: pointer; border: 1px solid #888;
+    }
+    button {
+      margin: 0 5px; padding: 4px 10px;
+    }
+    #previewImage {
+      max-width: 80%; display: block; margin: 1rem auto; border: 2px solid #444;
+    }
+  </style>
+</head>
+<body>
+  <h1>📋 批閱題目：<span id="questionTitle">智慧手寫作答</span></h1>
+  <div id="progressInfo">載入中...</div>
+  <hr>
+  <img id="previewImage" src="" alt="預覽圖">
+  <div id="answersContainer"></div>
+</body>
+</html>
