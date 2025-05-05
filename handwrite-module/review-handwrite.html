@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📝 手寫作答批閱</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f4f6f8;
+      margin: 0;
+      padding: 1rem;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    #questionTitle {
+      text-align: center;
+      font-size: 1.2rem;
+      margin: 0.5rem 0 1rem;
+    }
+    #progressInfo {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-weight: bold;
+      color: #444;
+    }
+    #previewImage {
+      display: block;
+      max-width: 90%;
+      max-height: 360px;
+      margin: 1rem auto;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+    }
+    .student-entry {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .student-entry img.thumbnail {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .student-entry div {
+      margin-top: 0.5rem;
+    }
+    textarea {
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+    button {
+      margin-top: 0.3rem;
+      margin-right: 0.3rem;
+      padding: 0.4rem 0.8rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button.selected {
+      background-color: #4CAF50;
+      color: white;
+    }
+    button.downloadBtn {
+      background-color: #777;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>📝 學生手寫作答批閱</h1>
+  <div id="questionTitle">題目 ID：載入中...</div>
+  <div id="progressInfo">正在讀取作答...</div>
+  <img id="previewImage" src="" alt="預覽圖" />
+
+  <div id="answersContainer"></div>
+
+  <script type="module" src="review-loader.js"></script>
+</body>
+</html>
