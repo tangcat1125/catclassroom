@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智慧手寫</title>
+  <link rel="stylesheet" href="handwrite-interface.css">
+  <style>
+    canvas {
+      border: 2px solid #888;
+      border-radius: 6px;
+      background-color: white;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="pageTitle">🎨 手寫作答區</h1>
+  <canvas id="handwriteCanvas" width="320" height="320"></canvas>
+
+  <div class="controls">
+    <button onclick="clearCanvas()">✏️ 清除筆跡</button>
+    <button onclick="uploadHandwrite()">📤 上傳作答</button>
+  </div>
+
+  <div id="uploadStatus"></div>
+  <img id="previewImage" alt="上傳預覽圖">
+
+  <script type="module">
+    import { uploadHandwrite } from './handwrite-database.js';
+
+    const canvas = document.getElementById('handwriteCanvas');
+    const ctx = canvas.getContext('2d');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const previewImage = document.getElementById('previewImage');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const questionId = urlParams.get('questionId') || `自由繪圖_${Date.now()}`;
+    const backgroundUrl = urlParams.get('backgroundUrl');
+
+    const studentId = sessionStorage.getItem('studentId') || 'guest';
+    const studentName = sessionStorage.getItem('studentName') || '匿名學生';
+    const studentClass = sessionStorage.getItem('studentClass') || '未知班級';
+
+    let drawing = false;
+    canvas.addEventListener('mousedown', (e) => { drawing = true; draw(e); });
+    canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
+    canvas.addEventListener('mouseout', () => { drawing = false; ctx.beginPath(); });
+    canvas.addEventListener('mousemove', draw);
+
+    function draw(e) {
+      if (!drawing) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000';
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+
+    window.clearCanvas = function () {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+    };
+
+    window.uploadHandwrite = async function () {
+      const imageUrl = canvas.toDataURL('image/png');
+
+      uploadStatus.textContent = '📤 上傳中...';
+      try {
+        const releaseTime = await getQuestionTimestamp(questionId);
+        const now = Date.now();
+        const timeLimit = 10 * 60 * 1000; // 10分鐘
+
+        if (releaseTime && now - releaseTime > timeLimit) {
+          alert("⏰ 作答時間已過，無法上傳！");
+          uploadStatus.textContent = '❌ 超時，無法上傳。';
+          return;
+        }
+
+        await uploadHandwrite(studentId, questionId, imageUrl, studentName, studentClass);
+        uploadStatus.textContent = '✅ 上傳成功！';
+        previewImage.src = imageUrl;
+        previewImage.style.display = 'block';
+        alert("作答已成功上傳！視窗將在3秒後關閉。");
+        setTimeout(() => window.close(), 3000);
+      } catch (err) {
+        console.error(err);
+        uploadStatus.textContent = '❌ 上傳失敗，請稍後重試。';
+        alert("上傳失敗，請稍後重試！");
+      }
+    };
+
+    async function getQuestionTimestamp(questionId) {
+      try {
+        const res = await fetch(`https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app/handwritingTasks/${questionId}/releaseTimestamp.json`);
+        const ts = await res.json();
+        return ts || null;
+      } catch (e) {
+        console.warn("無法取得 releaseTimestamp：", e);
+        return null;
+      }
+    }
+
+    function loadBackgroundImage(url) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+      img.onerror = () => {
+        console.warn("背景圖載入失敗，使用空白畫布");
+        clearCanvas();
+      }
+      img.src = url;
+    }
+
+    // 初始化畫布背景
+    if (backgroundUrl) {
+      loadBackgroundImage(decodeURIComponent(backgroundUrl));
+    } else {
+      clearCanvas();
+    }
+  </script>
+</body>
+</html>
