@@ -30,16 +30,16 @@
     #closePanel { position: fixed; top: 20px; right: 20px; text-align: center; z-index: 999; }
     #closePanel img { width: 64px; cursor: pointer; }
     #closePanel div { font-size: 0.9rem; color: #444; margin-top: 4px; }
-    /* 新增：文件輸入框樣式 */
+    /* 文件輸入框樣式 */
     input[type="file"] { padding: 0.3rem; }
-    /* 新增：圖片預覽樣式 */
+    /* 圖片預覽樣式 */
     #imagePreview { max-width: 100%; max-height: 150px; margin-top: 0.5rem; display: none; /* 初始隱藏 */ }
   </style>
 </head>
 <body>
   <h1>🖋️ 智慧手寫任務中心</h1>
 
-  <!-- 移除 #captureTarget -->
+  <!-- 移除 #captureTarget 區塊 -->
 
   <div class="grid-container">
 
@@ -55,28 +55,20 @@
       <label for="backgroundUrl">背景圖網址（可手動貼入）</label>
       <input id="backgroundUrl" type="text" placeholder="可貼入網址，或從下方選擇檔案上傳">
 
-      <!-- ✅ 新增：文件選擇器 -->
       <label for="backgroundImageFile">或 上傳背景圖（優先使用）</label>
-      <input type="file" id="backgroundImageFile" accept="image/*"> <!-- accept="image/*" 限制只能選圖片 -->
-      <img id="imagePreview" src="#" alt="圖片預覽" /> <!-- 圖片預覽區 -->
+      <input type="file" id="backgroundImageFile" accept="image/*">
+      <img id="imagePreview" src="#" alt="圖片預覽" />
 
-      <!-- 修改按鈕文字，ID 不變 -->
       <button id="publishTaskBtn">🚀 發布任務 (若選了檔案會先上傳)</button>
-
-      <!-- 移除一鍵截圖按鈕 -->
-      <!-- <button id="lazyScreenshotBtn">...</button> -->
 
       <!-- 狀態顯示區域 -->
       <div id="status" style="margin-top: 1rem; font-weight: bold;"></div>
-
-      <!-- 移除 #lastScreenshotInfo -->
 
       <!-- 通用作答連結顯示區 -->
       <div id="generalLinkDisplay" style="margin-top: 1rem;"></div>
     </div>
 
-    <!-- 其他卡片 (學生作答連結, 預覽與批閱, 作答進度, 圖像清單) 保持不變 -->
-     <!-- 學生作答連結 -->
+    <!-- 學生作答連結 -->
      <div class="card">
       <h2>🔗 產生學生作答連結</h2>
       <label for="studentId">學生 ID</label>
@@ -148,7 +140,7 @@
       }, 300);
     }
 
-    // ✅ 新增：圖片預覽功能
+    // 圖片預覽功能
     const fileInput = document.getElementById('backgroundImageFile');
     const imagePreview = document.getElementById('imagePreview');
     if(fileInput && imagePreview) {
@@ -158,12 +150,12 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     imagePreview.src = e.target.result;
-                    imagePreview.style.display = 'block'; // 顯示預覽圖
+                    imagePreview.style.display = 'block';
                 }
                 reader.readAsDataURL(file);
             } else {
                 imagePreview.src = '#';
-                imagePreview.style.display = 'none'; // 隱藏預覽圖
+                imagePreview.style.display = 'none';
             }
         });
     }
