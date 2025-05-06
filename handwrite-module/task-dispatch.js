@@ -3,7 +3,6 @@
 // 使用 Firebase JS SDK v9+
 
 // 移除 html2canvas import
-// import html2canvas from 'https://cdn.skypack.dev/html2canvas';
 
 // 導入 Firebase 核心、分析、儲存、即時資料庫模塊
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
@@ -44,9 +43,6 @@ console.log('Firebase Database and Storage initialized.');
 
 /**
  * 📝 發送任務到 Firebase Realtime Database.
- * @param {string} questionId 題目代碼.
- * @param {string} title 任務標題.
- * @param {string} backgroundUrl 背景圖片 URL (選填).
  */
 export async function dispatchHandwriteTask(questionId, title, backgroundUrl) {
   const taskData = {
@@ -58,9 +54,6 @@ export async function dispatchHandwriteTask(questionId, title, backgroundUrl) {
 }
 
 // 移除 lazySuperScreenshotDispatch 函數
-/*
-export async function lazySuperScreenshotDispatch() { ... }
-*/
 
 /**
  * 🚀 發布任務：檢查是否有選定的背景圖檔案，若有則上傳，否則使用輸入框的 URL.
@@ -68,8 +61,8 @@ export async function lazySuperScreenshotDispatch() { ... }
 export async function publishTask() {
   const questionId = document.getElementById('questionId').value.trim();
   const title = document.getElementById('title').value.trim();
-  const backgroundUrlInput = document.getElementById('backgroundUrl'); // 背景圖 URL 輸入框
-  const fileInput = document.getElementById('backgroundImageFile'); // 背景圖檔案選擇器
+  const backgroundUrlInput = document.getElementById('backgroundUrl');
+  const fileInput = document.getElementById('backgroundImageFile');
   const statusEl = document.getElementById('status');
 
   if (!questionId || !title) {
@@ -77,36 +70,28 @@ export async function publishTask() {
     return;
   }
 
-  let finalBackgroundUrl = backgroundUrlInput.value.trim(); // 預設使用輸入框的 URL
-  const file = fileInput.files[0]; // 獲取選中的檔案
+  let finalBackgroundUrl = backgroundUrlInput.value.trim();
+  const file = fileInput.files[0];
 
   statusEl.innerText = '🚀 準備發布任務…';
 
   try {
-    // 檢查是否有選擇檔案
     if (file) {
       statusEl.innerText = `⬆️ 正在上傳背景圖 ${file.name}…`;
-      // 為檔案創建一個引用路徑，例如 backgrounds/任務ID.檔案後綴名
       const fileExtension = file.name.split('.').pop();
       const backgroundFileRef = storageRef(storage, `backgrounds/${questionId}.${fileExtension}`);
-
-      // 上傳檔案
       const uploadResult = await uploadBytes(backgroundFileRef, file);
       console.log('Upload successful:', uploadResult);
-
-      // 獲取下載 URL
       finalBackgroundUrl = await getDownloadURL(backgroundFileRef);
       console.log('Background image URL:', finalBackgroundUrl);
-      backgroundUrlInput.value = finalBackgroundUrl; // 更新輸入框的值
+      backgroundUrlInput.value = finalBackgroundUrl;
       statusEl.innerText = '✅ 背景圖上傳成功！正在派送任務…';
     }
 
-    // 無論是否上傳檔案，都執行派送任務
     await dispatchHandwriteTask(questionId, title, finalBackgroundUrl);
     statusEl.innerText = '✅ 任務已派送！';
     console.log('[任務派送完成] 任務 ID:', questionId, '背景 URL:', finalBackgroundUrl || '無');
 
-    // 在介面上顯示通用作答連結
     const previewLinkDisplayEl = document.getElementById('generalLinkDisplay');
     if (previewLinkDisplayEl) {
          const previewUrl = `studentUI.html?questionId=${encodeURIComponent(questionId)}`;
@@ -115,11 +100,14 @@ export async function publishTask() {
 
   } catch (err) {
     console.error('❌ 發布任務失敗', err);
-    statusEl.innerText = '❌ 派送失敗：' + err.message;
+    // 檢查是否為 Storage 錯誤 (權限、CORS 等)
+    if (err.code && err.code.startsWith('storage/')) {
+        statusEl.innerText = `❌ 派送失敗：背景圖上傳錯誤！請檢查 Storage 權限/規則。(${err.code})`;
+    } else {
+        statusEl.innerText = '❌ 派送失敗：' + err.message;
+    }
   } finally {
-    // 清空文件選擇器，避免下次誤用舊檔案
     fileInput.value = '';
-    // 清空圖片預覽
     const imagePreview = document.getElementById('imagePreview');
     if (imagePreview) {
       imagePreview.src = '#';
@@ -212,8 +200,8 @@ export async function loadProgress() {
         progressBar.innerText = `${percent}%`;
         progressStatus.innerText = `📊 已作答 ${count} / ${total} 人`;
         console.log('[作答進度統計完成]', { questionId, submitted: count, total: total });
-        // 可以在這裡觸發 loadImageList
-        // loadImageList();
+        // 可以考慮在這裡自動觸發圖像載入
+        loadImageList(); // <--- 自動載入圖像
     } catch (err) {
         console.error('❌ 載入進度失敗', err);
         progressStatus.innerText = '❌ 載入進度失敗：' + err.message;
@@ -282,11 +270,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     bindClick('publishTaskBtn', publishTask);
     // 移除對 lazyScreenshotBtn 的綁定
-    // bindClick('lazyScreenshotBtn', lazySuperScreenshotDispatch);
     bindClick('generateLinkBtn', generateLink);
     bindClick('openPreviewBtn', openPreview);
     bindClick('openReviewBtn', openReview);
-    bindClick('loadProgressBtn', loadProgress);
+    bindClick('loadProgressBtn', loadProgress); // loadProgress 現在會自動觸發 loadImageList
 
     document.body.addEventListener('click', (event) => {
         const copyButton = event.target.closest('.copy-btn');
@@ -301,9 +288,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     console.log('Event delegation set up for .copy-btn');
 
-    if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-        console.warn("請更新 task-dispatch.js 中的 firebaseConfig 為你的專案設定！");
-        const statusEl = document.getElementById('status');
-        if (statusEl) statusEl.innerText = "⚠️ 請在 task-dispatch.js 中填入你的 Firebase 專案設定！";
+    // 檢查 Firebase 配置是否已填寫
+    if (firebaseConfig.apiKey.startsWith("YOUR_") || firebaseConfig.apiKey.startsWith("AIzaSy")) { // 簡單檢查是否為佔位符或預設格式
+      if(firebaseConfig.apiKey === "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA"){ // 精確檢查是否為示例密鑰
+         console.warn("⚠️ 偵測到示例 Firebase 設定，請更新 task-dispatch.js 中的 firebaseConfig！");
+         const statusEl = document.getElementById('status');
+         if (statusEl) statusEl.innerText = "⚠️ 請在 task-dispatch.js 中填入你自己的 Firebase 專案設定！";
+      } else if (firebaseConfig.apiKey.startsWith("YOUR_")){
+         console.warn("請更新 task-dispatch.js 中的 firebaseConfig 為你的專案設定！");
+         const statusEl = document.getElementById('status');
+         if (statusEl) statusEl.innerText = "⚠️ 請在 task-dispatch.js 中填入你的 Firebase 專案設定！";
+      }
     }
 });
