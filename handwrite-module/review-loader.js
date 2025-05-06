@@ -1,118 +1,272 @@
-// review-loader.js
-// 對應 review-handwrite.html，教師批閱學生手寫作答專用模組
+// ✅ task-dispatch.js - 智慧手寫任務教師端腳本 (基礎派題版)
+// 功能：手動輸入資料派送任務、生成學生連結、開啟預覽/批閱、複製連結、載入進度、載入繳交清單。
+// 使用 Firebase JS SDK v9+
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+// 移除 Storage 相關 import
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-analytics.js';
+// Storage 相關 import 已移除
+import {
+  getDatabase, ref, set, get, child
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 
-// ✅ Firebase 設定（與 handwrite-upload、task-dispatch 共用專案）
+// 🛠️ Firebase 設定：請務必替換為你自己的專案參數
 const firebaseConfig = {
-  apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
-  authDomain: "catclassroom-login.firebaseapp.com",
-  databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "catclassroom-login",
-  storageBucket: "catclassroom-login.appspot.com",
-  messagingSenderId: "123487233181",
-  appId: "1:123487233181:web:aecc2891dc2d1096962074"
+  apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA", // <-- 請替換
+  authDomain: "catclassroom-login.firebaseapp.com", // <-- 請替換
+  databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app", // <-- 請替換
+  projectId: "catclassroom-login", // <-- 請替換
+  storageBucket: "catclassroom-login.appspot.com", // <-- 請替換
+  messagingSenderId: "123487233181", // <-- 請替換
+  appId: "1:123487233181:web:aecc2891dc2d1096962074", // <-- 請替換
+  measurementId: "G-6C92GYSX3F" // <-- 請替換
 };
 
+// 初始化 Firebase App 和服務
 const app = initializeApp(firebaseConfig);
+try {
+  getAnalytics(app);
+  console.log('Firebase Analytics initialized.');
+} catch (error) {
+  console.warn('Firebase Analytics initialization failed:', error);
+}
 const db = getDatabase(app);
+// 移除 Storage 初始化
+// const storage = getStorage(app);
+console.log('Firebase Database initialized.');
 
-// ✅ 抓取題目 ID
-const urlParams = new URLSearchParams(window.location.search);
-const questionId = urlParams.get("qid") || "demo-question";
 
-// 📌 UI 元件
-const questionTitle = document.getElementById("questionTitle");
-const answersContainer = document.getElementById("answersContainer");
-const previewImage = document.getElementById("previewImage");
-const progressInfo = document.getElementById("progressInfo");
+// --- 核心功能函數 ---
 
-// 顯示題目 ID
-questionTitle.textContent = `題目 ID：${questionId}`;
+/**
+ * 📝 發送任務到 Firebase Realtime Database.
+ */
+export async function dispatchHandwriteTask(questionId, title, backgroundUrl) {
+  const taskData = {
+    title,
+    backgroundUrl: backgroundUrl || '', // 保留背景 URL (可以為空)
+    timestamp: Date.now()
+  };
+  await set(ref(db, `handwritingTasks/${questionId}`), taskData);
+}
 
-// 🔄 從 Firebase 載入學生作答資料
-const answersRef = ref(db, `/handwritingAnswers/${questionId}`);
-onValue(answersRef, (snapshot) => {
-  const data = snapshot.val();
-  answersContainer.innerHTML = "";
-  previewImage.src = "";
+/**
+ * 🚀 發布任務：直接使用輸入框中的值派送.
+ */
+export async function publishTask() {
+  const questionId = document.getElementById('questionId').value.trim();
+  const title = document.getElementById('title').value.trim();
+  const backgroundUrlInput = document.getElementById('backgroundUrl');
+  const statusEl = document.getElementById('status');
 
-  if (!data) {
-    progressInfo.textContent = "尚無學生作答。";
+  if (!questionId || !title) {
+    statusEl.innerText = '❗ 請填寫題目代碼與標題';
     return;
   }
 
-  const entries = Object.entries(data);
-  progressInfo.textContent = `共 ${entries.length} 筆作答`;
+  // 直接獲取背景 URL 輸入框的值
+  const finalBackgroundUrl = backgroundUrlInput.value.trim();
+  statusEl.innerText = '🚀 準備發布任務…';
 
-  entries.forEach(([studentId, info]) => {
-    const entryDiv = document.createElement("div");
-    entryDiv.className = "student-entry";
+  try {
+    // 直接使用輸入的值派送任務
+    await dispatchHandwriteTask(questionId, title, finalBackgroundUrl);
+    statusEl.innerText = '✅ 任務已派送！';
+    console.log('[任務派送完成] 任務 ID:', questionId, '背景 URL:', finalBackgroundUrl || '無');
 
-    const img = document.createElement("img");
-    img.src = info.imageUrl;
-    img.alt = `${info.name} 的作答`;
-    img.className = "thumbnail";
-    img.onclick = () => {
-      previewImage.src = info.imageUrl;
-      previewImage.alt = `${info.name} 的作答預覽`;
-    };
-
-    const meta = document.createElement("div");
-    meta.innerHTML = `
-      👤 ${info.name || "未命名"}<br>
-      🏫 ${info.class || "?"} 班 ${info.seat || "?"} 號<br>
-      🆔 ${studentId}
-    `;
-
-    // 👉 批閱區塊
-    const tools = document.createElement("div");
-    tools.innerHTML = `
-      <label>批改：</label>
-      <button data-val="correct">✔</button>
-      <button data-val="wrong">✘</button>
-      <button data-val="revise">💬</button><br>
-      <textarea rows="2" cols="30" placeholder="老師留言...">${info.feedback?.comment || ""}</textarea><br>
-      <button class="saveBtn">💾 儲存回饋</button>
-      <button class="downloadBtn">⬇️ 下載圖片</button>
-    `;
-
-    // 批閱按鈕選取效果
-    tools.querySelectorAll("button[data-val]").forEach(btn => {
-      btn.onclick = () => {
-        tools.querySelectorAll("button[data-val]").forEach(b => b.classList.remove("selected"));
-        btn.classList.add("selected");
-      };
-    });
-
-    // 預設選中原先批改結果
-    if (info.feedback?.result) {
-      const selectedBtn = tools.querySelector(`button[data-val="${info.feedback.result}"]`);
-      if (selectedBtn) selectedBtn.classList.add("selected");
+    // 在介面上顯示通用作答連結
+    const previewLinkDisplayEl = document.getElementById('generalLinkDisplay');
+    if (previewLinkDisplayEl) {
+         const previewUrl = `studentUI.html?questionId=${encodeURIComponent(questionId)}`;
+         previewLinkDisplayEl.innerHTML = `📎 通用作答連結：<br><code id="generalLinkCode" class="word-break-all">${previewUrl}</code><button class="copy-btn ml-2" data-copy-target="generalLinkCode">📋 複製</button>`;
     }
 
-    // 儲存回饋事件
-    tools.querySelector(".saveBtn").onclick = () => {
-      const selected = tools.querySelector("button.selected[data-val]")?.dataset.val || "";
-      const comment = tools.querySelector("textarea").value;
-      update(ref(db, `/handwritingAnswers/${questionId}/${studentId}`), {
-        feedback: { result: selected, comment }
-      }).then(() => alert("✅ 已儲存！"));
+  } catch (err) {
+    console.error('❌ 發布任務失敗', err);
+    statusEl.innerText = '❌ 派送失敗：' + err.message; // 簡化錯誤提示，因為已無上傳步驟
+  }
+  // 不再需要 finally 清空 fileInput
+}
+
+// --- 其他函數 (generateLink, openPreview, openReview, copyToClipboard, loadProgress, loadImageList) 保持不變 ---
+export function generateLink() {
+    const studentId = document.getElementById('studentId').value.trim();
+    const studentName = document.getElementById('studentName').value.trim();
+    const studentClass = document.getElementById('studentClass').value.trim();
+    const questionId = document.getElementById('questionId').value.trim();
+    const generatedLinkEl = document.getElementById('generatedLinkDisplay');
+
+    if (!studentId || !questionId) {
+        if(generatedLinkEl) generatedLinkEl.innerHTML = '<p class="text-red-500">❗ 請輸入學生 ID 與題目代碼</p>';
+        return;
+    }
+    const url = `studentUI.html?questionId=${encodeURIComponent(questionId)}&studentId=${encodeURIComponent(studentId)}&name=${encodeURIComponent(studentName)}&class=${encodeURIComponent(studentClass)}`;
+    if (generatedLinkEl) {
+        generatedLinkEl.innerHTML = `👉 學生作答連結：<br><code id="studentLinkCode" class="word-break-all">${url}</code><button class="copy-btn ml-2" data-copy-target="studentLinkCode">📋 複製</button>`;
+    }
+    console.log('[產生學生連結]', url);
+}
+export function openPreview() {
+    const questionId = document.getElementById('questionId').value.trim();
+    const previewLinkDisplayEl = document.getElementById('previewLinkDisplay');
+    if (!questionId) {
+        if(previewLinkDisplayEl) previewLinkDisplayEl.innerHTML = '<p class="text-red-500">❗ 請輸入題目代碼</p>';
+        return;
+    }
+    const url = `studentUI.html?questionId=${encodeURIComponent(questionId)}&preview=true`;
+    if (previewLinkDisplayEl) {
+        previewLinkDisplayEl.innerHTML = `📋 畫布預視連結：<br><code id="previewLinkCode" class="word-break-all">${url}</code><button class="copy-btn ml-2" data-copy-target="previewLinkCode">📋 複製</button>`;
+    }
+    window.open(url, '_blank');
+    console.log('[開啟預覽]', url);
+}
+export function openReview() {
+    const questionId = document.getElementById('questionId').value.trim();
+    const reviewLinkDisplayEl = document.getElementById('reviewLinkDisplay');
+    if (!questionId) {
+        if(reviewLinkDisplayEl) reviewLinkDisplayEl.innerHTML = '<p class="text-red-500">❗ 請輸入題目代碼</p>';
+        return;
+    }
+    const url = `review-handwrite.html?questionId=${encodeURIComponent(questionId)}`;
+    if (reviewLinkDisplayEl) {
+        reviewLinkDisplayEl.innerHTML = `📝 批閱圖像頁面連結：<br><code id="reviewLinkCode" class="word-break-all">${url}</code><button class="copy-btn ml-2" data-copy-target="reviewLinkCode">📋 複製</button>`;
+    }
+    window.open(url, '_blank');
+    console.log('[開啟批閱]', url);
+}
+export function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) {
+        console.error(`Copy failed: Element with ID "${elementId}" not found.`);
+        alert('❌ 複製失敗：找不到指定的元素。');
+        return;
+    }
+    const text = element.innerText;
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            alert('✅ 已複製到剪貼簿！');
+            console.log(`[複製成功] 內容來自 ID "${elementId}"`);
+        })
+        .catch(err => {
+            console.error('❌ 複製失敗:', err);
+            alert('❌ 複製失敗，請手動複製。');
+        });
+}
+export async function loadProgress() {
+    const questionId = document.getElementById('questionId').value.trim();
+    const total = parseInt(document.getElementById('totalStudents').value || '0');
+    const progressBar = document.getElementById('progressBar');
+    const progressStatus = document.getElementById('progressStatus');
+    progressStatus.innerText = '統計中...';
+    progressBar.style.width = '0%';
+    progressBar.innerText = '0%';
+    if (!questionId || total <= 0) {
+        progressStatus.innerText = '❗ 請輸入題目代碼與有效的出席人數 (> 0)';
+        return;
+    }
+    try {
+        const snapshot = await get(child(ref(db), `handwriting/${questionId}`));
+        const count = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
+        const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+        progressBar.style.width = `${percent}%`;
+        progressBar.innerText = `${percent}%`;
+        progressStatus.innerText = `📊 已作答 ${count} / ${total} 人`;
+        console.log('[作答進度統計完成]', { questionId, submitted: count, total: total });
+        loadImageList(); // 自動載入圖像
+    } catch (err) {
+        console.error('❌ 載入進度失敗', err);
+        progressStatus.innerText = '❌ 載入進度失敗：' + err.message;
+        progressBar.style.width = '0%';
+        progressBar.innerText = '錯誤';
+    }
+}
+export async function loadImageList() {
+    const questionId = document.getElementById('questionId').value.trim();
+    const imageListEl = document.getElementById('imageList');
+    imageListEl.innerHTML = '載入中...';
+    if (!questionId) {
+        imageListEl.innerText = '❗ 請輸入題目代碼以載入圖像清單';
+        return;
+    }
+    try {
+        const snapshot = await get(child(ref(db), `handwriting/${questionId}`));
+        if (!snapshot.exists()) {
+            imageListEl.innerText = '🖼️ 目前無此題目的繳交資料';
+            console.log('[載入圖像清單] 無資料', { questionId });
+            return;
+        }
+        const data = snapshot.val();
+        imageListEl.innerHTML = '';
+        Object.entries(data).forEach(([studentId, studentData]) => {
+            const imageUrl = studentData.imageUrl || studentData;
+            if (imageUrl && typeof imageUrl === 'string') {
+                const imgContainer = document.createElement('div');
+                imgContainer.style.cssText = 'display:inline-block;text-align:center;margin: 5px; vertical-align: top;';
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = `學生 ${studentId}`;
+                img.style.cssText = 'width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; cursor: pointer;';
+                img.title = `學生 ${studentId}`;
+                img.onclick = () => window.open(imageUrl, '_blank');
+                const studentIdSpan = document.createElement('div');
+                studentIdSpan.innerText = studentId;
+                studentIdSpan.style.fontSize = '0.8rem';
+                studentIdSpan.style.color = '#555';
+                imgContainer.appendChild(img);
+                imgContainer.appendChild(studentIdSpan);
+                imageListEl.appendChild(imgContainer);
+            } else {
+                console.warn(`[載入圖像清單] 學生 ${studentId} 的數據結構不符預期或無 imageUrl`, studentData);
+            }
+        });
+        console.log('[載入圖像清單完成]', { questionId, count: Object.keys(data).length });
+    } catch (err) {
+        console.error('❌ 載入圖像清單失敗', err);
+        imageListEl.innerText = '❌ 載入圖像清單失敗：' + err.message;
+    }
+}
+
+// --- DOMContentLoaded 事件監聽器：綁定按鈕事件 ---
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded. Binding event listeners.');
+    const bindClick = (elementId, handler) => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.addEventListener('click', handler);
+            console.log(`Event listener bound to #${elementId}`);
+        } else {
+            console.warn(`Element with ID #${elementId} not found for event binding.`);
+        }
     };
 
-    // 下載圖片事件
-    tools.querySelector(".downloadBtn").onclick = () => {
-      const link = document.createElement("a");
-      link.href = info.imageUrl;
-      link.download = `${info.name || studentId}-作答.png`;
-      link.click();
-    };
+    bindClick('publishTaskBtn', publishTask); // 只保留這個核心派送按鈕
+    bindClick('generateLinkBtn', generateLink);
+    bindClick('openPreviewBtn', openPreview);
+    bindClick('openReviewBtn', openReview);
+    bindClick('loadProgressBtn', loadProgress);
 
-    // 加入畫面
-    entryDiv.appendChild(img);
-    entryDiv.appendChild(meta);
-    entryDiv.appendChild(tools);
-    answersContainer.appendChild(entryDiv);
-  });
+    document.body.addEventListener('click', (event) => {
+        const copyButton = event.target.closest('.copy-btn');
+        if (copyButton) {
+            const targetId = copyButton.dataset.copyTarget;
+            if (targetId) {
+                copyToClipboard(targetId);
+            } else {
+                console.warn('Copy button clicked but no data-copy-target attribute found.');
+            }
+        }
+    });
+    console.log('Event delegation set up for .copy-btn');
+
+    if (firebaseConfig.apiKey.startsWith("YOUR_") || firebaseConfig.apiKey.startsWith("AIzaSy")) {
+      if(firebaseConfig.apiKey === "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA"){
+         console.warn("⚠️ 偵測到示例 Firebase 設定，請更新 task-dispatch.js 中的 firebaseConfig！");
+         const statusEl = document.getElementById('status');
+         if (statusEl) statusEl.innerText = "⚠️ 請在 task-dispatch.js 中填入你自己的 Firebase 專案設定！";
+      } else if (firebaseConfig.apiKey.startsWith("YOUR_")){
+         console.warn("請更新 task-dispatch.js 中的 firebaseConfig 為你的專案設定！");
+         const statusEl = document.getElementById('status');
+         if (statusEl) statusEl.innerText = "⚠️ 請在 task-dispatch.js 中填入你的 Firebase 專案設定！";
+      }
+    }
 });
