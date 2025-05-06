@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🖋️ 智慧手寫任務中心</title>
+  <style>
+    /* --- 樣式基本保持不變，移除 #captureTarget, #lastScreenshotInfo 相關樣式 --- */
+    body { font-family: sans-serif; background: #f5f7fa; margin: 0; padding: 1rem; }
+    h1 { text-align: center; color: #333; margin-bottom: 1.5rem; }
+    .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+    .card { background: #fff; padding: 1.2rem; border-radius: 10px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); }
+    .card h2 { margin-top: 0; color: #444; font-size: 1.2rem; }
+    label { display: block; margin-top: 0.5rem; font-weight: bold; }
+    input, textarea { width: 100%; padding: 0.5rem; margin-top: 0.3rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+    button.copy-btn { background-color: #777; margin-left: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+    code { display: inline-block; margin-top: 0.5rem; background: #eee; padding: 0.25rem 0.5rem; border-radius: 4px; word-break: break-all; max-width: calc(100% - 50px); vertical-align: middle; }
+    .block { display: block; }
+    .word-break-all { word-break: break-all; }
+    .ml-2 { margin-left: 0.5rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .text-red-500 { color: #ef4444; }
+    .text-green-600 { color: #16a34a; }
+    .text-sm { font-size: 0.875rem; }
+    .text-gray-500 { color: #6b7280; }
+
+    .progress-bar { height: 24px; background: #4CAF50; color: white; text-align: center; border-radius: 4px; line-height: 24px; }
+    .progress-container { background: #ccc; border-radius: 4px; overflow: hidden; }
+    #closePanel { position: fixed; top: 20px; right: 20px; text-align: center; z-index: 999; }
+    #closePanel img { width: 64px; cursor: pointer; }
+    #closePanel div { font-size: 0.9rem; color: #444; margin-top: 4px; }
+    /* 新增：文件輸入框樣式 */
+    input[type="file"] { padding: 0.3rem; }
+    /* 新增：圖片預覽樣式 */
+    #imagePreview { max-width: 100%; max-height: 150px; margin-top: 0.5rem; display: none; /* 初始隱藏 */ }
+  </style>
+</head>
+<body>
+  <h1>🖋️ 智慧手寫任務中心</h1>
+
+  <!-- 移除 #captureTarget -->
+
+  <div class="grid-container">
+
+    <!-- 建立任務 -->
+    <div class="card">
+      <h2>📤 建立新手寫任務</h2>
+      <label for="questionId">題目代碼</label>
+      <input id="questionId" type="text" placeholder="例：20240506-Angle">
+
+      <label for="title">題目標題</label>
+      <input id="title" type="text" placeholder="例：畫出你心中的家">
+
+      <label for="backgroundUrl">背景圖網址（可手動貼入）</label>
+      <input id="backgroundUrl" type="text" placeholder="可貼入網址，或從下方選擇檔案上傳">
+
+      <!-- ✅ 新增：文件選擇器 -->
+      <label for="backgroundImageFile">或 上傳背景圖（優先使用）</label>
+      <input type="file" id="backgroundImageFile" accept="image/*"> <!-- accept="image/*" 限制只能選圖片 -->
+      <img id="imagePreview" src="#" alt="圖片預覽" /> <!-- 圖片預覽區 -->
+
+      <!-- 修改按鈕文字，ID 不變 -->
+      <button id="publishTaskBtn">🚀 發布任務 (若選了檔案會先上傳)</button>
+
+      <!-- 移除一鍵截圖按鈕 -->
+      <!-- <button id="lazyScreenshotBtn">...</button> -->
+
+      <!-- 狀態顯示區域 -->
+      <div id="status" style="margin-top: 1rem; font-weight: bold;"></div>
+
+      <!-- 移除 #lastScreenshotInfo -->
+
+      <!-- 通用作答連結顯示區 -->
+      <div id="generalLinkDisplay" style="margin-top: 1rem;"></div>
+    </div>
+
+    <!-- 其他卡片 (學生作答連結, 預覽與批閱, 作答進度, 圖像清單) 保持不變 -->
+     <!-- 學生作答連結 -->
+     <div class="card">
+      <h2>🔗 產生學生作答連結</h2>
+      <label for="studentId">學生 ID</label>
+      <input id="studentId" type="text" placeholder="例：s60301">
+      <label for="studentName">學生姓名</label>
+      <input id="studentName" type="text" placeholder="例：小明">
+      <label for="studentClass">學生班級</label>
+      <input id="studentClass" type="text" placeholder="例：603">
+      <button id="generateLinkBtn">🔗 產生連結</button>
+      <div id="generatedLinkDisplay"></div>
+    </div>
+
+    <!-- 預覽與批閱 -->
+    <div class="card">
+      <h2>👀 預覽與批閱</h2>
+      <p class="text-sm text-gray-500">需先在上方設定好題目代碼。</p>
+      <div id="previewLinkDisplay">
+        📋 學生畫布預視連結：<br>
+        <code id="previewLinkCode">尚未產生</code>
+        <button class="copy-btn ml-2" data-copy-target="previewLinkCode">複製</button>
+      </div>
+      <button id="openPreviewBtn" style="margin-top: 0.5rem;">開啟預覽</button>
+      <hr style="margin: 1rem 0;">
+      <div id="reviewLinkDisplay">
+        📝 批閱圖像頁面連結：<br>
+        <code id="reviewLinkCode">尚未產生</code>
+        <button class="copy-btn ml-2" data-copy-target="reviewLinkCode">複製</button>
+      </div>
+      <button id="openReviewBtn" style="margin-top: 0.5rem;">開啟批閱</button>
+    </div>
+
+    <!-- 今日作答進度 -->
+    <div class="card">
+      <h2>📊 今日作答進度</h2>
+       <p class="text-sm text-gray-500">需先在上方設定好題目代碼。</p>
+      <label for="totalStudents">出席人數（請手動輸入）</label>
+      <input id="totalStudents" type="number" placeholder="請輸入總人數">
+      <button id="loadProgressBtn">計算進度</button>
+      <p id="progressStatus">尚未統計</p>
+      <div class="progress-container">
+        <div id="progressBar" class="progress-bar" style="width: 0%">0%</div>
+      </div>
+    </div>
+
+    <!-- 圖像繳交清單 -->
+    <div class="card" style="grid-column: 1 / -1;">
+      <h2>🖼️ 圖像繳交清單</h2>
+      <p class="text-sm text-gray-500">需先在上方設定好題目代碼並計算過進度。</p>
+      <div id="imageList" style="margin-top: 1rem;">尚未載入</div>
+    </div>
+
+  </div> <!-- grid-container end -->
+
+  <!-- 關閉面板元素 -->
+  <div id="closePanel">
+    <img src="cat.png" alt="關閉" title="點我關閉這個畫面" onclick="tryClose()">
+    <div>❌ 關閉此視窗</div>
+  </div>
+
+  <!-- JS 腳本 -->
+  <script type="module" src="task-dispatch.js"></script>
+  <script>
+    function tryClose() {
+      window.close();
+      setTimeout(() => {
+        if (!window.closed) {
+          alert("這個頁面可能是手動開的，無法自動關閉，請用瀏覽器右上角關閉喔～😸");
+        }
+      }, 300);
+    }
+
+    // ✅ 新增：圖片預覽功能
+    const fileInput = document.getElementById('backgroundImageFile');
+    const imagePreview = document.getElementById('imagePreview');
+    if(fileInput && imagePreview) {
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block'; // 顯示預覽圖
+                }
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.src = '#';
+                imagePreview.style.display = 'none'; // 隱藏預覽圖
+            }
+        });
+    }
+  </script>
+
+</body>
+</html>
