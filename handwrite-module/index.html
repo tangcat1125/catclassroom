@@ -77,6 +77,8 @@
     .mt-2 { margin-top: 0.5rem; }
     .text-red-500 { color: #ef4444; }
     .text-green-600 { color: #16a34a; }
+    .text-sm { font-size: 0.875rem; }
+    .text-gray-500 { color: #6b7280; }
 
     .progress-bar {
       height: 24px;
@@ -84,27 +86,41 @@
       color: white;
       text-align: center;
       border-radius: 4px;
-      line-height: 24px; /* 垂直居中文字 */
+      line-height: 24px;
     }
     .progress-container {
       background: #ccc;
       border-radius: 4px;
       overflow: hidden;
     }
-    /* 新增：為截圖目標添加一個可見的邊框，方便識別 */
     #captureTarget {
       border: 2px dashed #ccc;
       padding: 1rem;
       margin-top: 1rem;
-      background-color: #fff; /* 給個背景色，截圖時可能更好看 */
+      background-color: #fff;
     }
-    /* 新增：截圖結果區域 */
     #lastScreenshotInfo {
       margin-top: 1rem;
       padding: 0.5rem;
       border: 1px solid #e0e0e0;
       border-radius: 4px;
       background-color: #f9f9f9;
+    }
+    #closePanel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      text-align: center;
+      z-index: 999;
+    }
+    #closePanel img {
+      width: 64px;
+      cursor: pointer;
+    }
+    #closePanel div {
+      font-size: 0.9rem;
+      color: #444;
+      margin-top: 4px;
     }
   </style>
 </head>
@@ -114,45 +130,28 @@
   <!-- ********** 截圖目標區域 ********** -->
   <div id="captureTarget">
       <p style="text-align: center; color: #888;">（將此區域的內容截圖）</p>
-      <!-- 示例：包含任務設定的部分內容作為截圖目標 -->
-       <div style="padding: 1rem;"> <!-- 內層 padding -->
+      <div style="padding: 1rem;">
         <h2>📤 任務設定 (截圖內容示例)</h2>
         <label for="questionId">題目代碼</label>
         <input id="questionId" type="text" placeholder="例：20240506-Angle">
-
         <label for="title">題目標題</label>
         <input id="title" type="text" placeholder="例：畫出你心中的家">
-
         <label for="backgroundUrl">背景圖網址（選填，截圖後會自動填入）</label>
         <input id="backgroundUrl" type="text" placeholder="截圖後會自動填入">
        </div>
   </div>
   <!-- ********** 截圖目標區域結束 ********** -->
 
-
   <div class="grid-container" style="margin-top: 1.5rem;">
-
     <!-- 任務操作區 -->
     <div class="card">
       <h2>🚀 任務操作</h2>
       <p class="text-sm text-gray-500">請先在上方區域設定好任務代碼與標題。</p>
-
-      <!-- 功能按鈕 -->
       <button id="publishTaskBtn">🚀 一般派送 (使用手動輸入的背景圖)</button>
       <button id="lazyScreenshotBtn">📸 一鍵截圖派送 (截取上方虛線框)</button>
-
-      <!-- 狀態顯示區域 -->
       <div id="status" style="margin-top: 1rem; font-weight: bold;"></div>
-
-      <!-- 最新截圖連結顯示區 -->
-      <div id="lastScreenshotInfo">
-        <!-- JS 會在這裡填入截圖連結和複製按鈕 -->
-      </div>
-
-       <!-- 通用作答連結顯示區 -->
-      <div id="generalLinkDisplay" style="margin-top: 1rem;">
-        <!-- JS 會在這裡填入通用連結和複製按鈕 -->
-      </div>
+      <div id="lastScreenshotInfo"></div>
+      <div id="generalLinkDisplay" style="margin-top: 1rem;"></div>
     </div>
 
     <!-- 學生作答連結 -->
@@ -160,36 +159,25 @@
       <h2>🔗 產生學生作答連結</h2>
       <label for="studentId">學生 ID</label>
       <input id="studentId" type="text" placeholder="例：s60301">
-
       <label for="studentName">學生姓名</label>
       <input id="studentName" type="text" placeholder="例：小明">
-
       <label for="studentClass">學生班級</label>
       <input id="studentClass" type="text" placeholder="例：603">
-
       <button id="generateLinkBtn">🔗 產生連結</button>
-
-      <div id="generatedLinkDisplay">
-        <!-- JS 會在這裡填入學生連結和複製按鈕 -->
-      </div>
+      <div id="generatedLinkDisplay"></div>
     </div>
 
     <!-- 預覽與批閱 -->
     <div class="card">
       <h2>👀 預覽與批閱</h2>
       <p class="text-sm text-gray-500">需先在上方設定好題目代碼。</p>
-
-      <!-- 預覽連結顯示區 -->
       <div id="previewLinkDisplay">
         📋 學生畫布預視連結：<br>
         <code id="previewLinkCode">尚未產生</code>
         <button class="copy-btn ml-2" data-copy-target="previewLinkCode">複製</button>
       </div>
       <button id="openPreviewBtn" style="margin-top: 0.5rem;">開啟預覽</button>
-
       <hr style="margin: 1rem 0;">
-
-      <!-- 批閱連結顯示區 -->
       <div id="reviewLinkDisplay">
         📝 批閱圖像頁面連結：<br>
         <code id="reviewLinkCode">尚未產生</code>
@@ -215,13 +203,34 @@
     <div class="card" style="grid-column: 1 / -1;">
       <h2>🖼️ 圖像繳交清單</h2>
       <p class="text-sm text-gray-500">需先在上方設定好題目代碼並計算過進度。</p>
-      <!-- 可以考慮讓計算進度按鈕也觸發圖像載入 -->
       <div id="imageList" style="margin-top: 1rem;">尚未載入</div>
     </div>
   </div>
 
-  <!-- ✅ 將 script 移到 body 結尾，並移除重複的 html2canvas 引用 -->
+  <!-- 關閉面板元素 -->
+  <div id="closePanel">
+    <!-- 確保 cat.png 在同目錄或正確路徑下 -->
+    <!-- ✅ 修改 onclick -->
+    <img src="cat.png" alt="關閉" title="點我關閉這個畫面" onclick="tryClose()">
+    <div>❌ 關閉此視窗</div>
+  </div>
+
+  <!-- 將 script 移到 body 結尾 -->
   <script type="module" src="task-dispatch.js"></script>
+
+  <!-- ✅ 新增：tryClose 函數定義 -->
+  <script>
+    function tryClose() {
+      window.close();
+      // 加強提示：萬一失敗就提醒老師
+      setTimeout(() => {
+        // 檢查 window 是否真的被關閉了
+        if (!window.closed) {
+          alert("這個頁面可能是手動開的，無法自動關閉，請用瀏覽器右上角關閉喔～😸");
+        }
+      }, 300); // 給瀏覽器一點時間處理關閉請求
+    }
+  </script>
 
 </body>
 </html>
