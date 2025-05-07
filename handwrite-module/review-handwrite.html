@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>🧑‍🏫 手寫作答批閱</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1rem;
+      background: #f9f9f9;
+    }
+    h1 {
+      color: #333;
+    }
+    .preview {
+      margin: 1rem 0;
+      border: 1px solid #ccc;
+      background: #fff;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+    }
+    .preview img {
+      max-height: 160px;
+      cursor: pointer;
+      margin-right: 1rem;
+    }
+    .info {
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal img {
+      max-width: 90vw;
+      max-height: 90vh;
+      box-shadow: 0 0 15px white;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧑‍🏫 手寫作答批閱</h1>
+  <div id="submissionList">📡 載入中...</div>
+
+  <div class="modal" id="imageModal" onclick="this.style.display='none'">
+    <img src="#" id="modalImage">
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA",
+      authDomain: "catclassroom-login.firebaseapp.com",
+      databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "catclassroom-login",
+      storageBucket: "catclassroom-login.appspot.com",
+      messagingSenderId: "123487233181",
+      appId: "1:123487233181:web:aecc2891dc2d1096962074"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const urlParams = new URLSearchParams(location.search);
+    const questionId = urlParams.get('questionId');
+    const listEl = document.getElementById('submissionList');
+
+    if (!questionId) {
+      listEl.innerHTML = '❗ 錯誤：未指定題目代碼 (questionId)';
+    } else {
+      loadSubmissions();
+    }
+
+    async function loadSubmissions() {
+      try {
+        const snapshot = await get(ref(db, 'handwriting'));
+        const data = snapshot.val();
+        if (!data) {
+          listEl.innerHTML = '🚫 尚無學生繳交本題';
+          return;
+        }
+
+        const filtered = [];
+        for (const studentId in data) {
+          if (data[studentId][questionId]) {
+            const record = data[studentId][questionId];
+            filtered.push({ studentId, ...record });
+          }
+        }
+
+        if (filtered.length === 0) {
+          listEl.innerHTML = '🚫 尚無學生繳交本題';
+          return;
+        }
+
+        listEl.innerHTML = '';
+        filtered.sort((a, b) => b.timestamp - a.timestamp);
+
+        for (const item of filtered) {
+          const div = document.createElement('div');
+          div.className = 'preview';
+
+          const img = document.createElement('img');
+          img.src = item.imageUrl;
+          img.alt = item.studentName;
+          img.onclick = () => showModal(item.imageUrl);
+
+          const info = document.createElement('div');
+          info.className = 'info';
+          info.innerHTML = `
+            👤 ${item.studentName} (${item.studentClass})<br>
+            🆔 ${item.studentId}<br>
+            🕒 ${new Date(item.timestamp).toLocaleString()}
+          `;
+
+          div.appendChild(img);
+          div.appendChild(info);
+          listEl.appendChild(div);
+        }
+      } catch (err) {
+        console.error('❌ 無法讀取作答資料', err);
+        listEl.innerHTML = '❌ 發生錯誤，請稍後再試';
+      }
+    }
+
+    function showModal(url) {
+      const modal = document.getElementById('imageModal');
+      const modalImg = document.getElementById('modalImage');
+      modalImg.src = url;
+      modal.style.display = 'flex';
+    }
+  </script>
+</body>
+</html>
