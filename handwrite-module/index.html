@@ -20,6 +20,7 @@
     #closePanel { position: fixed; top: 20px; right: 20px; text-align: center; z-index: 999; }
     #closePanel img { width: 64px; cursor: pointer; }
     #closePanel div { font-size: 0.9rem; color: #444; margin-top: 4px; }
+    #pasteZone { border: 2px dashed #aaa; padding: 1rem; text-align: center; margin-top: 1rem; color: #555; }
   </style>
 </head>
 <body>
@@ -41,6 +42,8 @@
       <label for="backgroundImageFile">或选擇背景圖檔</label>
       <input type="file" id="backgroundImageFile" accept="image/*">
       <img id="imagePreview" style="display:none; margin-top: 0.5rem; max-width: 100%;">
+
+      <div id="pasteZone">✂️ 將圖片貼上或拖書至此處，上傳成為背景圖</div>
 
       <button id="publishTaskBtn">🚀 發布任務</button>
       <div id="status" style="margin-top: 1rem; font-weight: bold;"></div>
