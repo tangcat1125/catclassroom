@@ -1,52 +1,49 @@
-// ✅ 強化貼圖偵錯版 task-dispatch.js - 搶修 ReferenceError 並保留核心偵錯
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-analytics.js';
-import {
-  getStorage, ref as storageRef, uploadBytes, getDownloadURL
-} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
-import {
-  getDatabase, ref, set, get, child
-} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
+// ✅ 整合修正版 task-dispatch.js - 包含正確配置、貼圖、teacher/currentQuestion、學生連結背景圖
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"; // 使用 Grok 的 Firebase SDK 版本
+import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"; // 注意 child 的引入
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+// getAnalytics 可以選擇性保留，如果需要分析功能
+// import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
+
+// 【重要】使用你自己的 Firebase 配置！
 const firebaseConfig = {
-  apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA", // <-- 記得替換為你自己的金鑰
-  authDomain: "catclassroom-login.firebaseapp.com",
-  databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "catclassroom-login",
-  storageBucket: "catclassroom-login.appspot.com",
-  messagingSenderId: "123487233181",
-  appId: "1:123487233181:web:aecc2891dc2d1096962074",
-  measurementId: "G-6C92GYSX3F"
+  apiKey: "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA", // <-- 你的金鑰
+  authDomain: "catclassroom-login.firebaseapp.com",  // <-- 你的網域
+  databaseURL: "https://catclassroom-login-default-rtdb.asia-southeast1.firebasedatabase.app", // <-- 你的資料庫URL
+  projectId: "catclassroom-login",                   // <-- 你的專案ID
+  storageBucket: "catclassroom-login.appspot.com",   // <-- 你的 Storage 儲存桶 (注意：Grok 的規則是 .firebasestorage.app，但你的配置是 .appspot.com，請確認哪個是正確的，通常 SDK 會處理)
+  messagingSenderId: "123487233181",               // <-- 你的 Sender ID
+  appId: "1:123487233181:web:aecc2891dc2d1096962074", // <-- 你的 App ID
+  measurementId: "G-6C92GYSX3F"                      // <-- 你的 Measurement ID (可選)
 };
 
 const app = initializeApp(firebaseConfig);
-try {
-  getAnalytics(app);
-  console.log('[Firebase] Analytics initialized.');
-} catch (e) {
-  console.warn('[Firebase] Analytics init failed:', e);
-}
 const db = getDatabase(app);
 const storage = getStorage(app);
+// try { getAnalytics(app); console.log('[Firebase] Analytics initialized.'); } catch(e) { console.warn('[Firebase] Analytics init failed:', e); }
 console.log('[Firebase] Database and Storage initialized.');
 
-// --- 任務派送相關 ---
+
+// --- 任務派送相關 (合併 Grok 的 timeLimit) ---
 export async function dispatchHandwriteTask(questionId, title, backgroundUrl) {
   console.log('[dispatchHandwriteTask] Attempting to dispatch:', { questionId, title, backgroundUrl });
   const taskData = {
-    title,
+    title: title,
     backgroundUrl: backgroundUrl || '', // 確保 backgroundUrl 不是 undefined
-    releaseTimestamp: Date.now()
+    releaseTimestamp: Date.now(),
+    timeLimit: 10 * 60 * 1000 // 10 分鐘限制 (來自 Grok)
   };
   try {
     await set(ref(db, `handwritingTasks/${questionId}`), taskData);
     console.log('[dispatchHandwriteTask] Successfully dispatched to handwritingTasks:', questionId);
   } catch (error) {
     console.error('[dispatchHandwriteTask] Error dispatching to handwritingTasks:', error);
-    throw error; // 重新拋出錯誤，讓 publishTask 的 catch 也能捕獲
+    throw error;
   }
 }
 
+// --- 發布任務主函數 (整合並修正) ---
 export async function publishTask() {
   console.log('[publishTask] Initiated.');
   const questionIdInput = document.getElementById('questionId');
@@ -78,12 +75,13 @@ export async function publishTask() {
     if (file) {
       console.log('[publishTask] File selected for background:', file.name);
       statusEl.innerText = `⬆️ 正在上傳背景圖 ${file.name}…`;
-      const ext = file.name.split('.').pop() || 'png'; // 提供默認擴展名
-      const bgRef = storageRef(storage, `handwritingTasks/${questionId}.${ext}`);
-      console.log('[publishTask] Uploading to Storage path:', `handwritingTasks/${questionId}.${ext}`);
-      await uploadBytes(bgRef, file);
+      const fileExtension = file.name.split('.').pop() || 'png';
+      // ✅ 使用 Grok 建議的 backgrounds/ 路徑
+      const backgroundFileRef = storageRef(storage, `backgrounds/${questionId}.${fileExtension}`);
+      console.log('[publishTask] Uploading to Storage path:', `backgrounds/${questionId}.${fileExtension}`);
+      await uploadBytes(backgroundFileRef, file);
       console.log('[publishTask] Upload to Storage successful.');
-      finalBackgroundUrl = await getDownloadURL(bgRef);
+      finalBackgroundUrl = await getDownloadURL(backgroundFileRef);
       console.log('[publishTask] Obtained download URL:', finalBackgroundUrl);
       backgroundUrlInput.value = finalBackgroundUrl;
       statusEl.innerText = '✅ 背景圖上傳成功，準備派送…';
@@ -91,43 +89,31 @@ export async function publishTask() {
       console.log('[publishTask] No file selected for background. Using backgroundUrlInput value if any.');
     }
 
-    // 測試用繞道策略 (如果需要，取消註解並調整)
-    // if (!finalBackgroundUrl) {
-    //     finalBackgroundUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/640px-Placeholder_view_vector.svg.png";
-    //     console.log('[DEBUG] No background image provided or derived. Using default placeholder image.');
-    //     if (backgroundUrlInput) {
-    //         backgroundUrlInput.value = finalBackgroundUrl;
-    //     }
-    // }
-
     await dispatchHandwriteTask(questionId, title, finalBackgroundUrl);
-    // dispatchHandwriteTask 內部已有日誌，這裡不再重複
 
-    console.log('[DEBUG] Preparing to set teacher/currentQuestion.');
-    console.log('[DEBUG] Values for teacher/currentQuestion - questionId:', questionId, 'title:', title, 'finalBackgroundUrl:', finalBackgroundUrl);
+    // ✅ 修正學生連結，加入 backgroundUrl
+    const studentLinkUrl = `handwrite-upload.html?questionId=${encodeURIComponent(questionId)}&backgroundUrl=${encodeURIComponent(finalBackgroundUrl || '')}`;
+    console.log('[DEBUG] studentLinkUrl for generalLinkDisplay and teacher/currentQuestion:', studentLinkUrl);
 
-    const previewUrl = `handwrite-upload.html?questionId=${encodeURIComponent(questionId)}&backgroundUrl=${encodeURIComponent(finalBackgroundUrl || '')}`; // 確保 finalBackgroundUrl 不是 undefined
-    console.log('[DEBUG] previewUrl for teacher/currentQuestion:', previewUrl);
-
+    // ✅ 同步到 /teacher/currentQuestion
     try {
       await set(ref(db, 'teacher/currentQuestion'), {
         questionId,
         title,
-        backgroundUrl: finalBackgroundUrl || '', // 確保 backgroundUrl 不是 undefined
-        link: previewUrl,
+        backgroundUrl: finalBackgroundUrl || '',
+        link: studentLinkUrl, // 使用修正後的學生連結
         text: `📝 今日任務：${title} 👉 點我作答`,
         timestamp: Date.now()
       });
       console.log('[DEBUG] Successfully set teacher/currentQuestion.');
     } catch (teacherError) {
       console.error('[DEBUG] Error setting teacher/currentQuestion:', teacherError);
-      // 不在這裡更新 statusEl，讓外層 catch 處理總體失敗狀態
     }
 
     statusEl.innerText = '✅ 任務已派送！';
     const previewEl = document.getElementById('generalLinkDisplay');
     if (previewEl) {
-      previewEl.innerHTML = `📎 通用作答連結：<br><code id="generalLinkCode" style="word-break:break-all;">${previewUrl}</code><button class="copy-btn" data-copy-target="generalLinkCode" style="margin-left:0.5rem;">📋 複製</button>`;
+      previewEl.innerHTML = `📎 通用作答連結：<br><code id="generalLinkCode" style="word-break:break-all;">${studentLinkUrl}</code><button class="copy-btn" data-copy-target="generalLinkCode" style="margin-left:0.5rem;">📋 複製</button>`;
     } else {
       console.warn('[publishTask] Element with ID "generalLinkDisplay" not found for preview link.');
     }
@@ -135,20 +121,22 @@ export async function publishTask() {
   } catch (err) {
     console.error('❌ 發布任務失敗 (Outer Catch)', err);
     statusEl.innerText = '❌ 發布任務失敗：' + (err.message || '未知錯誤');
+    // 可以考慮在 fileInput.value = ''; 清空選擇的檔案，避免重複提交相同檔案
+    if(fileInput) fileInput.value = '';
   }
 }
 
-// --- 貼圖相關 ---
+// --- 貼圖相關 (從我們之前的版本複製過來) ---
 window.addEventListener('paste', async (e) => {
   console.log('[DEBUG][Paste] Paste event triggered!');
   if (!e.clipboardData) {
     console.log('[DEBUG][Paste] clipboardData is not available.');
     return;
   }
-  const items = e.clipboardData.items; // 不需要 ?. 因為上面已檢查 e.clipboardData
+  const items = e.clipboardData.items;
   if (items && items.length > 0) {
     console.log('[DEBUG][Paste] Clipboard items found:', items.length);
-    for (let i = 0; i < items.length; i++) { // 使用傳統 for 循環或 for...of
+    for (let i = 0; i < items.length; i++) {
       const item = items[i];
       console.log(`[DEBUG][Paste] Checking item ${i} type:`, item.type, 'kind:', item.kind);
       if (item.kind === 'file' && item.type.startsWith('image/')) {
@@ -156,8 +144,8 @@ window.addEventListener('paste', async (e) => {
         const file = item.getAsFile();
         if (file) {
           console.log('[DEBUG][Paste] File obtained:', file.name, file.type, file.size, 'bytes');
-          handlePastedImage(file); // 假設這是你要調用的函數
-          return; // 通常剪貼簿裡只有一張圖片，處理完就返回
+          handlePastedImage(file);
+          return;
         } else {
           console.log('[DEBUG][Paste] Could not get file from image item.');
         }
@@ -193,23 +181,23 @@ async function handlePastedImage(file) {
     statusEl.innerText = `⬆️ 正在上傳貼上的圖片 ${file.name}…`;
     console.log('[handlePastedImage] Uploading pasted image:', file.name);
     const ext = file.name.split('.').pop() || 'png';
-    const bgRef = storageRef(storage, `handwritingTasks/${questionId}.${ext}`);
-    console.log('[handlePastedImage] Uploading to Storage path:', `handwritingTasks/${questionId}.${ext}`);
+    // ✅ 使用 Grok 建議的 backgrounds/ 路徑
+    const bgRef = storageRef(storage, `backgrounds/${questionId}.${ext}`);
+    console.log('[handlePastedImage] Uploading to Storage path:', `backgrounds/${questionId}.${ext}`);
     await uploadBytes(bgRef, file);
     console.log('[handlePastedImage] Upload to Storage successful.');
     const url = await getDownloadURL(bgRef);
     console.log('[handlePastedImage] Obtained download URL:', url);
 
-    preview.src = URL.createObjectURL(file); // 顯示本地預覽
+    preview.src = URL.createObjectURL(file);
     preview.style.display = 'block';
-    backgroundUrlInput.value = url; // 將 Storage URL 填入輸入框
+    backgroundUrlInput.value = url;
     statusEl.innerText = `✅ 貼圖上傳成功，請點擊「發布任務」！`;
     console.log('[handlePastedImage] Paste upload successful. URL:', url);
 
   } catch (err) {
     console.error('[handlePastedImage] 貼圖上傳或獲取URL失敗:', err);
     statusEl.innerText = '❌ 貼圖上傳失敗：' + (err.message || '未知錯誤');
-    // 可以考慮清除預覽和 backgroundUrlInput.value
     preview.src = '#';
     preview.style.display = 'none';
     backgroundUrlInput.value = '';
@@ -227,18 +215,16 @@ function bindClick(id, handler) {
   }
 }
 
-// --- DOMContentLoaded ---
+// --- DOMContentLoaded (註解掉 generateLink 的綁定) ---
 document.addEventListener('DOMContentLoaded', () => {
   console.log('[DOMContentLoaded] DOM fully loaded. Binding core event listeners.');
   bindClick('publishTaskBtn', publishTask);
-  // bindClick('generateLinkBtn', generateLink); // <-- 已註解掉，避免 ReferenceError
+  // bindClick('generateLinkBtn', generateLink); // <-- 暫時註解，除非你已恢復 generateLink 函數並有對應HTML
 
-  // 檢查 Firebase 配置是否為預設 (可選)
   if (firebaseConfig.apiKey === "AIzaSyBB3wmBveYumzmPUQuIr4ApZYxKnnT-IdA") {
     console.warn("⚠️ 偵測到示例 Firebase 設定，請記得更新為你自己的專案金鑰！");
     const statusEl = document.getElementById('status');
-    if (statusEl) {
-        // 不直接覆蓋 statusEl，避免影響正常操作提示
+    if (statusEl && statusEl.parentNode) { // 確保 statusEl 及其父節點存在
         const warningDiv = document.createElement('div');
         warningDiv.textContent = "⚠️ 請在 task-dispatch.js 中填入你自己的 Firebase 專案設定！";
         warningDiv.style.color = "orange";
@@ -247,3 +233,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+
+// 如果需要 generateLink 功能，請取消以下註解並確保 HTML 中有對應的元素
+/*
+export function generateLink() {
+    const studentIdInput = document.getElementById('studentId');
+    const studentNameInput = document.getElementById('studentName');
+    const studentClassInput = document.getElementById('studentClass');
+    const questionIdInput = document.getElementById('questionId');
+    const backgroundUrlInput = document.getElementById('backgroundUrl');
+    const generatedLinkEl = document.getElementById('generatedLinkDisplayForStudent'); // 建議不同 ID
+
+    const studentId = studentIdInput ? studentIdInput.value.trim() : '';
+    const studentName = studentNameInput ? studentNameInput.value.trim() : '';
+    const studentClass = studentClassInput ? studentClassInput.value.trim() : '';
+    const questionId = questionIdInput ? questionIdInput.value.trim() : '';
+    const backgroundUrl = backgroundUrlInput ? backgroundUrlInput.value.trim() : '';
+
+    if (!studentId && generatedLinkEl) {
+        generatedLinkEl.innerHTML = '<p style="color:red;">❗ 請輸入學生 ID</p>';
+        return;
+    }
+    if (!questionId && generatedLinkEl) {
+        generatedLinkEl.innerHTML = '<p style="color:red;">❗ 請確保題目代碼已填寫</p>';
+        return;
+    }
+
+    const studentParams = studentId ? `&studentId=${encodeURIComponent(studentId)}&name=${encodeURIComponent(studentName)}&class=${encodeURIComponent(studentClass)}` : '';
+    const url = `handwrite-upload.html?questionId=${encodeURIComponent(questionId)}${studentParams}&backgroundUrl=${encodeURIComponent(backgroundUrl)}`;
+
+    if (generatedLinkEl) {
+        generatedLinkEl.innerHTML = `👉 學生作答連結：<br><code id="studentLinkCode" style="word-break:break-all;">${url}</code><button class="copy-btn" data-copy-target="studentLinkCode" style="margin-left:0.5rem;">📋 複製</button>`;
+    } else {
+        console.warn('Element with ID "generatedLinkDisplayForStudent" not found.');
+    }
+    console.log('[產生學生連結]', url);
+}
+*/
