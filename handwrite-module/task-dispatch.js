@@ -1,4 +1,4 @@
-// ✅ 修正完成版 task-dispatch.js - 增加 text 欄位，與學生 UI 對接成功
+// ✅ 修正版 task-dispatch.js with DEBUG logs for teacher/currentQuestion
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-analytics.js';
 import {
@@ -57,20 +57,29 @@ export async function publishTask() {
       await uploadBytes(bgRef, file);
       finalBackgroundUrl = await getDownloadURL(bgRef);
       backgroundUrlInput.value = finalBackgroundUrl;
-      statusEl.innerText = '✅ 背景圖上傳成功！正在派送任務…';
+      statusEl.innerText = '✅ 背景圖上傳成功，準備派送…';
     }
 
     await dispatchHandwriteTask(questionId, title, finalBackgroundUrl);
+    console.log('[DEBUG] Dispatched to handwritingTasks. Preparing to set teacher/currentQuestion.');
+    console.log('[DEBUG] Values for teacher/currentQuestion - questionId:', questionId, 'title:', title, 'finalBackgroundUrl:', finalBackgroundUrl);
 
     const previewUrl = `handwrite-upload.html?questionId=${encodeURIComponent(questionId)}&backgroundUrl=${encodeURIComponent(finalBackgroundUrl)}`;
-    await set(ref(db, 'teacher/currentQuestion'), {
-      questionId,
-      title,
-      backgroundUrl: finalBackgroundUrl,
-      link: previewUrl,
-      text: `📝 今日任務：${title} 👉 點我作答`,
-      timestamp: Date.now()
-    });
+    console.log('[DEBUG] previewUrl for teacher/currentQuestion:', previewUrl);
+
+    try {
+      await set(ref(db, 'teacher/currentQuestion'), {
+        questionId,
+        title,
+        backgroundUrl: finalBackgroundUrl,
+        link: previewUrl,
+        text: `📝 今日任務：${title} 👉 點我作答`,
+        timestamp: Date.now()
+      });
+      console.log('[DEBUG] Successfully set teacher/currentQuestion.');
+    } catch (teacherError) {
+      console.error('[DEBUG] Error setting teacher/currentQuestion:', teacherError);
+    }
 
     statusEl.innerText = '✅ 任務已派送！';
     const previewEl = document.getElementById('generalLinkDisplay');
@@ -78,7 +87,17 @@ export async function publishTask() {
       previewEl.innerHTML = `📎 通用作答連結：<br><code id="generalLinkCode" class="word-break-all">${previewUrl}</code><button class="copy-btn ml-2" data-copy-target="generalLinkCode">📋 複製</button>`;
     }
   } catch (err) {
-    console.error('❌ 發布任務失敗', err);
+    console.error('❌ 發布任務失敗 (Outer Catch)', err);
     statusEl.innerText = '❌ 發布任務失敗：' + err.message;
   }
 }
+
+function bindClick(id, handler) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('click', handler);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  bindClick('publishTaskBtn', publishTask);
+  bindClick('generateLinkBtn', generateLink);
+});
